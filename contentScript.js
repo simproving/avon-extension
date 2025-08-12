@@ -174,7 +174,7 @@
         };
 
         runBatch();
-        sendResponse({ ok: true });
+        sendResponse({ ok: true, batchSize: avonFillState.batchSize, total: avonFillState.queue.length });
       } catch (e) {
         sendResponse({ ok: false, error: String(e?.message || e) });
       }

@@ -28,7 +28,7 @@
   "statusCopied": { "message": "Rezultatul a fost copiat." },
   "statusCopyFailed": { "message": "Copiere eșuată." },
   "statusNothingToFill": { "message": "Nimic de completat." },
-  "statusQueuedStarting": { "message": "S-au pus în coadă $1 element(e). Se încep primele 30..." },
+  "statusQueuedStarting": { "message": "S-au pus în coadă $1 element(e). Se încep primele $2..." },
   "statusFillFailed": { "message": "Completarea a eșuat." },
   "statusUnableToCommunicate": { "message": "Nu se poate comunica cu pagina." },
   "statusApplyingRow": { "message": "Se aplică rândul $1 / $2" },
@@ -37,6 +37,9 @@
   "statusContinuingNextBatch": { "message": "Se continuă cu următorul lot..." },
   "statusAllItemsCompleted": { "message": "Toate elementele au fost finalizate." },
   "statusUnableToContinue": { "message": "Nu se poate continua." },
+  
+  "countsSummary": { "message": "Coduri în intrare: total $1, unic $2 | rezultat: $3 ($4 unice)" },
+  "countsMismatchIndicator": { "message": " ⚠️" },
   
   "statusOpenedProductEntry": { "message": "S-a deschis Product Entry." },
   "statusUnableToOpenProductEntry": { "message": "Nu se poate deschide Product Entry." },

@@ -28,7 +28,7 @@
   "statusCopied": { "message": "Copied output." },
   "statusCopyFailed": { "message": "Copy failed." },
   "statusNothingToFill": { "message": "Nothing to fill." },
-  "statusQueuedStarting": { "message": "Queued $1 item(s). Starting first 30..." },
+  "statusQueuedStarting": { "message": "Queued $1 item(s). Starting first $2..." },
   "statusFillFailed": { "message": "Fill failed." },
   "statusUnableToCommunicate": { "message": "Unable to communicate with page." },
   "statusApplyingRow": { "message": "Applying row $1 / $2" },
@@ -37,6 +37,9 @@
   "statusContinuingNextBatch": { "message": "Continuing with next batch..." },
   "statusAllItemsCompleted": { "message": "All items completed." },
   "statusUnableToContinue": { "message": "Unable to continue." },
+  
+  "countsSummary": { "message": "Codes in input: total $1, unique $2 | output: $3 ($4 unique)" },
+  "countsMismatchIndicator": { "message": " ⚠️" },
   
   "statusOpenedProductEntry": { "message": "Opened Product Entry." },
   "statusUnableToOpenProductEntry": { "message": "Unable to open Product Entry." },

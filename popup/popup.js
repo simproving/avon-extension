@@ -201,7 +201,14 @@ function handleProcess() {
     const outputCodes = currentItems.map(it => it.code);
     const outputUniqueCodes = Array.from(new Set(outputCodes));
     const mismatch = uniqueInputCodes.length !== outputUniqueCodes.length;
-    setCounts(`Codes in input: total ${allInputCodes.length}, unique ${uniqueInputCodes.length} | output: ${outputCodes.length} (${outputUniqueCodes.length} unique)${mismatch ? ' ⚠️' : ''}`);
+    const summary = chrome.i18n.getMessage('countsSummary', [
+      String(allInputCodes.length),
+      String(uniqueInputCodes.length),
+      String(outputCodes.length),
+      String(outputUniqueCodes.length)
+    ]) || `Codes in input: total ${allInputCodes.length}, unique ${uniqueInputCodes.length} | output: ${outputCodes.length} (${outputUniqueCodes.length} unique)`;
+    const warn = mismatch ? (chrome.i18n.getMessage('countsMismatchIndicator') || ' ⚠️') : '';
+    setCounts(summary + warn);
   } catch {
     setCounts('');
   }
@@ -280,7 +287,7 @@ btnFill?.addEventListener('click', async () => {
       items
     });
     setStatus(response?.ok
-      ? (chrome.i18n.getMessage('statusQueuedStarting', String(items.length)) || `Queued ${items.length}`)
+      ? (chrome.i18n.getMessage('statusQueuedStarting', [String(items.length), String(response?.batchSize || 30)]) || `Queued ${items.length}. Starting first ${response?.batchSize || 30}...`)
       : (response?.error || chrome.i18n.getMessage('statusFillFailed')));
     if (response?.ok) {
       btnContinue.style.display = 'none';
