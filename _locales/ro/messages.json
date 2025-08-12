@@ -19,7 +19,7 @@
   "thCode": { "message": "Cod" },
   "thQty": { "message": "Cant." },
   
-  "btnProductEntry": { "message": "Deschide Product Entry" },
+  "btnProductEntry": { "message": "Mergi la Pus Comanda" },
   "openOptions": { "message": "Deschide Opțiuni" },
 
   "statusFormatted": { "message": "Formatat." },
