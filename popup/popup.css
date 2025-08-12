@@ -1,0 +1,55 @@
+:root {
+  color-scheme: light dark;
+  --space: 8px;
+}
+
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  margin: 0;
+}
+
+main {
+  padding: calc(var(--space) * 2);
+  min-width: 320px;
+}
+
+h1 {
+  font-size: 16px;
+  margin: 0 0 var(--space) 0;
+}
+
+button {
+  margin-right: var(--space);
+  margin-bottom: var(--space);
+}
+
+#status {
+  min-height: 1.5em;
+}
+
+/* Formatter UI */
+.formatter {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space);
+  margin-bottom: calc(var(--space) * 2);
+}
+
+.formatter label {
+  font-size: 12px;
+  color: gray;
+}
+
+.formatter textarea {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+}
+
+.controls-row {
+  display: flex;
+  gap: var(--space);
+  flex-wrap: wrap;
+}
+
+
