@@ -4,6 +4,192 @@ const openOptions = document.getElementById('openOptions');
 const btnProductEntry = document.getElementById('btnProductEntry');
 let aliasList = [];
 
+// Login Manager controls
+const loginNameEl = document.getElementById('loginName');
+const loginUsernameEl = document.getElementById('loginUsername');
+const loginPasswordEl = document.getElementById('loginPassword');
+const btnSaveLoginEl = document.getElementById('btnSaveLogin');
+const loginSelectEl = document.getElementById('loginSelect');
+const btnSendLoginEl = document.getElementById('btnSendLogin');
+const btnDeleteLoginEl = document.getElementById('btnDeleteLogin');
+const btnTogglePasswordEl = document.getElementById('btnTogglePassword');
+
+function readSavedLogins() {
+  try {
+    const raw = localStorage.getItem('savedLogins');
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedLogins(logins) {
+  try {
+    localStorage.setItem('savedLogins', JSON.stringify(Array.isArray(logins) ? logins : []));
+  } catch {}
+}
+
+function readSelectedLoginIndex() {
+  const raw = localStorage.getItem('savedLoginsSelected');
+  const idx = raw != null ? Number(raw) : NaN;
+  return Number.isInteger(idx) ? idx : -1;
+}
+
+function writeSelectedLoginIndex(index) {
+  try { localStorage.setItem('savedLoginsSelected', String(index)); } catch {}
+}
+
+function renderLoginSelect() {
+  if (!loginSelectEl) return;
+  const logins = readSavedLogins();
+  loginSelectEl.innerHTML = '';
+  if (!logins.length) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'No saved logins';
+    loginSelectEl.appendChild(opt);
+    loginSelectEl.disabled = true;
+    return;
+  }
+  loginSelectEl.disabled = false;
+  logins.forEach((login, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    const name = (login?.name || '').trim();
+    const user = (login?.username || '').trim();
+    const label = name && user ? `${name} (${user})` : (name || user || `Login ${i + 1}`);
+    opt.textContent = label;
+    opt.title = label;
+    loginSelectEl.appendChild(opt);
+  });
+  const sel = readSelectedLoginIndex();
+  if (sel >= 0 && sel < logins.length) {
+    loginSelectEl.value = String(sel);
+  }
+}
+
+function getSelectedOrTypedLogin() {
+  const typedUsername = loginUsernameEl?.value?.trim() || '';
+  const typedPassword = loginPasswordEl?.value || '';
+  const typedName = loginNameEl?.value?.trim() || '';
+  const logins = readSavedLogins();
+  const selectIdx = loginSelectEl && loginSelectEl.disabled === false ? Number(loginSelectEl.value) : NaN;
+  if (Number.isInteger(selectIdx) && selectIdx >= 0 && selectIdx < logins.length) {
+    writeSelectedLoginIndex(selectIdx);
+    return logins[selectIdx];
+  }
+  if (typedUsername || typedPassword) {
+    return { name: typedName, username: typedUsername, password: typedPassword };
+  }
+  return null;
+}
+
+btnSaveLoginEl?.addEventListener('click', () => {
+  const name = loginNameEl?.value?.trim() || '';
+  const username = loginUsernameEl?.value?.trim() || '';
+  const password = loginPasswordEl?.value || '';
+  if (!username) {
+    setStatus('Please enter a username to save.');
+    return;
+  }
+  const labeledName = name || username;
+  const current = readSavedLogins();
+  // Prefer updating by username; if not found, try by name; otherwise append
+  let existingIndex = current.findIndex(l => l && l.username === username);
+  if (existingIndex < 0 && labeledName) {
+    existingIndex = current.findIndex(l => l && (l.name || '').trim() === labeledName);
+  }
+  if (existingIndex >= 0) {
+    current[existingIndex] = { name: labeledName, username, password };
+    writeSelectedLoginIndex(existingIndex);
+  } else {
+    current.push({ name: labeledName, username, password });
+    writeSelectedLoginIndex(current.length - 1);
+  }
+  writeSavedLogins(current);
+  renderLoginSelect();
+  setStatus('Login saved locally.');
+});
+
+loginSelectEl?.addEventListener('change', () => {
+  const idx = Number(loginSelectEl.value);
+  if (!Number.isInteger(idx)) return;
+  writeSelectedLoginIndex(idx);
+  const logins = readSavedLogins();
+  const selected = logins[idx];
+  if (selected) {
+    if (loginNameEl) loginNameEl.value = selected.name || '';
+    if (loginUsernameEl) loginUsernameEl.value = selected.username || '';
+    if (loginPasswordEl) loginPasswordEl.value = selected.password || '';
+  }
+});
+
+btnDeleteLoginEl?.addEventListener('click', () => {
+  const logins = readSavedLogins();
+  const idx = Number(loginSelectEl?.value);
+  if (!Number.isInteger(idx) || idx < 0 || idx >= logins.length) {
+    setStatus('No saved login selected.');
+    return;
+  }
+  logins.splice(idx, 1);
+  writeSavedLogins(logins);
+  // Adjust selected index
+  const newIdx = Math.min(idx, Math.max(0, logins.length - 1));
+  writeSelectedLoginIndex(logins.length ? newIdx : -1);
+  renderLoginSelect();
+  setStatus('Login deleted.');
+});
+
+btnSendLoginEl?.addEventListener('click', async () => {
+  const creds = getSelectedOrTypedLogin();
+  if (!creds || !creds.username) {
+    setStatus('Nothing to send.');
+    return;
+  }
+  try {
+    const tab = await getActiveTab();
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      type: 'AVON_LOGIN_FILL',
+      username: creds.username,
+      password: creds.password || ''
+    });
+    if (response?.ok) {
+      setStatus('Credentials sent to page.');
+    } else {
+      setStatus(response?.error || 'Unable to send credentials.');
+    }
+  } catch (e) {
+    setStatus('Unable to communicate with page.');
+  }
+});
+
+// Initialize login select on load
+renderLoginSelect();
+// Populate fields with selected on load, if any
+(() => {
+  const idx = readSelectedLoginIndex();
+  const list = readSavedLogins();
+  if (idx >= 0 && idx < list.length) {
+    const s = list[idx];
+    if (loginNameEl) loginNameEl.value = s.name || '';
+    if (loginUsernameEl) loginUsernameEl.value = s.username || '';
+    if (loginPasswordEl) loginPasswordEl.value = s.password || '';
+  }
+})();
+
+// Toggle password visibility
+btnTogglePasswordEl?.addEventListener('click', () => {
+  if (!loginPasswordEl) return;
+  const isHidden = loginPasswordEl.type === 'password';
+  loginPasswordEl.type = isHidden ? 'text' : 'password';
+  if (btnTogglePasswordEl) {
+    btnTogglePasswordEl.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+    btnTogglePasswordEl.title = isHidden ? 'Hide password' : 'Show password';
+    btnTogglePasswordEl.textContent = isHidden ? '🙈' : '👁';
+  }
+});
+
 function escapeRegexLiteral(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

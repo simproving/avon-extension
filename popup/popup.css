@@ -18,6 +18,42 @@ h1 {
   margin: 0 0 var(--space) 0;
 }
 
+/* Login Manager */
+#loginManager {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid rgba(127,127,127,0.3);
+  border-radius: 6px;
+  margin-bottom: calc(var(--space) * 2);
+}
+
+#loginManager .login-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+#loginManager .login-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#loginManager .password-wrap {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px;
+}
+
+#btnTogglePassword {
+  padding: 4px 8px;
+}
+
 button {
   margin-right: var(--space);
   margin-bottom: var(--space);

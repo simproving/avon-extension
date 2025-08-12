@@ -9,6 +9,29 @@
   <body>
     <main>
       <h1 data-i18n="popupTitle">Avon</h1>
+      <section id="loginManager">
+        <div class="login-row">
+          <label for="loginName">Name</label>
+          <input id="loginName" type="text" placeholder="e.g. Personal, Work" />
+        </div>
+        <div class="login-row">
+          <label for="loginUsername">Username</label>
+          <input id="loginUsername" type="text" autocomplete="username" />
+        </div>
+        <div class="login-row">
+          <label for="loginPassword">Password</label>
+          <div class="password-wrap">
+            <input id="loginPassword" type="password" autocomplete="current-password" />
+            <button id="btnTogglePassword" type="button" aria-label="Show password" title="Show password">👁</button>
+          </div>
+        </div>
+        <div class="login-controls">
+          <button id="btnSaveLogin">Save</button>
+          <select id="loginSelect" title="Saved logins"></select>
+          <button id="btnSendLogin">Send to Site</button>
+          <button id="btnDeleteLogin" title="Delete selected login">Delete</button>
+        </div>
+      </section>
       <button id="btnProductEntry" data-i18n="btnProductEntry">Open Product Entry</button>
       <section class="formatter">
         <label for="inputArea" data-i18n="labelInput">Input</label>

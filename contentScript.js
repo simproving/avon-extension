@@ -31,6 +31,31 @@
     if (message.type === 'PING') {
       sendResponse({ type: 'PONG', source: 'contentScript' });
     }
+    if (message.type === 'AVON_LOGIN_FILL') {
+      try {
+        const usernameInput = document.querySelector('#sellerUserId');
+        const passwordInput = document.querySelector('#sellerEmailPassword');
+        if (!usernameInput || !passwordInput) {
+          sendResponse({ ok: false, error: 'Login inputs not found on this page.' });
+          return;
+        }
+        const setInputValue = (el, value) => {
+          el.focus();
+          el.value = value ?? '';
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        setInputValue(usernameInput, message.username || '');
+        setInputValue(passwordInput, message.password || '');
+        // Optional: blur to let frameworks validate
+        usernameInput.blur();
+        passwordInput.blur();
+        sendResponse({ ok: true });
+      } catch (e) {
+        sendResponse({ ok: false, error: String(e?.message || e) });
+      }
+      return true;
+    }
     if (message.type === 'HIGHLIGHT_SELECTION') {
       const selection = window.getSelection()?.toString() || '';
       if (selection) {
