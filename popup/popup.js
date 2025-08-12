@@ -22,6 +22,21 @@ function setStatus(text) {
   statusEl.textContent = text;
 }
 
+// Translation helper that respects selected language via i18n.js
+function t(key, substitutions) {
+  try {
+    if (typeof window !== 'undefined' && typeof window.i18nGet === 'function') {
+      const v = window.i18nGet(key, substitutions);
+      if (v) return v;
+    }
+  } catch {}
+  try {
+    const v = chrome.i18n.getMessage(key, substitutions);
+    if (v) return v;
+  } catch {}
+  return '';
+}
+
 function setCounts(text) {
   if (countsEl) countsEl.textContent = text;
 }
@@ -99,9 +114,10 @@ function extractItems(text) {
     }
   }
 
-  // Quantity markers like "2 buc", "2 bucăți", "2 bucati" near a code.
+  // Quantity markers like "2 buc", "2 bucăți", "2 bucati", and also "2 set", "2 seturi" near a code.
   // Guard against crossing another 5-digit code between the code and the quantity.
-  let re = /\b(\d{5})\b([^\n\r]{0,80}?)\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)(?=\W|$)/gi;
+  const unitPattern = '(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\\.?|bucati|bucăți|bucăţi|set(?:uri)?|set-uri)';
+  let re = new RegExp(`\\b(\\d{5})\\b([^\\n\\r]{0,80}?)\\b(\\d{1,2})\\s*${unitPattern}(?=\\W|$)`, 'gi');
   for (let m; (m = re.exec(s)); ) {
     const [full, code, between, qty] = m;
     // Skip if another 5-digit code appears in-between; that qty likely belongs to a later code
@@ -110,8 +126,8 @@ function extractItems(text) {
       addQty(code, qty, m.index, m.index + full.length);
     }
   }
-  // Also support the reversed order: "2 buc" ... then the 5-digit code, with the same guard
-  re = /\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)(?=\W|$)([^\n\r]{0,80}?)\b(\d{5})\b/gi;
+  // Also support the reversed order: "2 buc"/"2 seturi" ... then the 5-digit code, with the same guard
+  re = new RegExp(`\\b(\\d{1,2})\\s*${unitPattern}(?=\\W|$)([^\\n\\r]{0,80}?)\\b(\\d{5})\\b`, 'gi');
   for (let m; (m = re.exec(s)); ) {
     const [full, qty, between, code] = m;
     if (/\b\d{5}\b/.test(between)) continue;
@@ -146,6 +162,25 @@ function extractItems(text) {
   re = /(\d+)\s*(?:[-:\/]|[\(\[]\s*)(\d{5})\s*(?:[\)\]])?/g;
   for (let m; (m = re.exec(s)); ) {
     const [full, qty, code] = m;
+    if (!overlaps(m.index, m.index + full.length)) {
+      addQty(code, qty, m.index, m.index + full.length);
+    }
+  }
+  // Plain forms without unit or explicit separator, e.g., "28605 2", "28605. 2", or "2 28605"
+  // Forward: code then qty
+  re = /\b(\d{5})\b[ \t]*[\.,]?[ \t]*(\d{1,2})(?=\W|$)/g;
+  for (let m; (m = re.exec(s)); ) {
+    const [full, code, qty] = m;
+    if (!overlaps(m.index, m.index + full.length)) {
+      addQty(code, qty, m.index, m.index + full.length);
+    }
+  }
+  // Reverse: qty then code; avoid cases where qty belongs to a previous code joined by a separator (e.g., "28605-2")
+  re = /\b(\d{1,2})\b[ \t]*[\.,]?[ \t]*(\d{5})\b/g;
+  for (let m; (m = re.exec(s)); ) {
+    const [full, qty, code] = m;
+    const pre = s.slice(Math.max(0, m.index - 16), m.index);
+    if (/\d{5}\s*(?:[-:\/]|[\(\[]\s*)\s*$/.test(pre)) continue;
     if (!overlaps(m.index, m.index + full.length)) {
       addQty(code, qty, m.index, m.index + full.length);
     }
@@ -196,7 +231,7 @@ function handleProcess() {
   const input = inputArea.value;
   currentItems = extractItems(input);
   renderTable(currentItems, null);
-  setStatus(currentItems.length ? chrome.i18n.getMessage('statusFormatted') : chrome.i18n.getMessage('statusNoCodes'));
+  setStatus(currentItems.length ? t('statusFormatted') : t('statusNoCodes'));
 
   // Sanity: count 5-digit codes in input (total and unique) vs output rows
   try {
@@ -216,13 +251,13 @@ function handleProcess() {
     const outputCodes = currentItems.map(it => it.code);
     const outputUniqueCodes = Array.from(new Set(outputCodes));
     const mismatch = uniqueInputCodes.length !== outputUniqueCodes.length;
-    const summary = chrome.i18n.getMessage('countsSummary', [
+    const summary = t('countsSummary', [
       String(allInputCodes.length),
       String(uniqueInputCodes.length),
       String(outputCodes.length),
       String(outputUniqueCodes.length)
     ]) || `Codes in input: total ${allInputCodes.length}, unique ${uniqueInputCodes.length} | output: ${outputCodes.length} (${outputUniqueCodes.length} unique)`;
-    const warn = mismatch ? (chrome.i18n.getMessage('countsMismatchIndicator') || ' ⚠️') : '';
+    const warn = mismatch ? (t('countsMismatchIndicator') || ' ⚠️') : '';
     setCounts(summary + warn);
   } catch {
     setCounts('');
@@ -233,15 +268,15 @@ btnProcess?.addEventListener('click', handleProcess);
 btnClear?.addEventListener('click', () => {
   inputArea.value = '';
   outputArea.value = '';
-  setStatus(chrome.i18n.getMessage('statusCleared'));
+  setStatus(t('statusCleared'));
   try { chrome.storage?.local?.remove?.('lastInput'); } catch {}
 });
 btnCopy?.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(itemsToLines(currentItems));
-    setStatus(chrome.i18n.getMessage('statusCopied'));
+    setStatus(t('statusCopied'));
   } catch {
-    setStatus(chrome.i18n.getMessage('statusCopyFailed'));
+    setStatus(t('statusCopyFailed'));
   }
 });
 
@@ -292,7 +327,7 @@ btnFill?.addEventListener('click', async () => {
   const tab = await getActiveTab();
   const items = currentItems;
   if (!items.length) {
-    setStatus(chrome.i18n.getMessage('statusNothingToFill'));
+    setStatus(t('statusNothingToFill'));
     return;
   }
 
@@ -302,13 +337,13 @@ btnFill?.addEventListener('click', async () => {
       items
     });
     setStatus(response?.ok
-      ? (chrome.i18n.getMessage('statusQueuedStarting', [String(items.length), String(response?.batchSize || 30)]) || `Queued ${items.length}. Starting first ${response?.batchSize || 30}...`)
-      : (response?.error || chrome.i18n.getMessage('statusFillFailed')));
+      ? (t('statusQueuedStarting', [String(items.length), String(response?.batchSize || 30)]) || `Queued ${items.length}. Starting first ${response?.batchSize || 30}...`)
+      : (response?.error || t('statusFillFailed')));
     if (response?.ok) {
       btnContinue.style.display = 'none';
     }
   } catch (err) {
-    setStatus(chrome.i18n.getMessage('statusUnableToCommunicate'));
+    setStatus(t('statusUnableToCommunicate'));
   }
 });
 
@@ -320,19 +355,19 @@ chrome.runtime.onMessage.addListener((message) => {
     if (index !== null) {
       lastProcessedIndex = Math.max(lastProcessedIndex, index);
       renderTable(currentItems, index);
-      setStatus(chrome.i18n.getMessage('statusApplyingRow', [String(index + 1), String(currentItems.length)]) || `Applying row ${index + 1} / ${currentItems.length}`);
+      setStatus(t('statusApplyingRow', [String(index + 1), String(currentItems.length)]) || `Applying row ${index + 1} / ${currentItems.length}`);
     }
   }
   if (message.type === 'AVON_FILL_DONE') {
     renderTable(currentItems, null);
-    setStatus(chrome.i18n.getMessage('statusFillComplete'));
+    setStatus(t('statusFillComplete'));
     btnContinue.style.display = 'none';
   }
   if (message.type === 'AVON_FILL_PAUSED') {
     const { nextIndex, total, remaining, batchSize } = message;
     lastProcessedIndex = nextIndex - 1;
     renderTable(currentItems, null);
-    setStatus(chrome.i18n.getMessage('statusPausedAfter', [String(Math.min(nextIndex, batchSize)), String(remaining)])
+    setStatus(t('statusPausedAfter', [String(Math.min(nextIndex, batchSize)), String(remaining)])
       || `Paused after ${Math.min(nextIndex, batchSize)} items. ${remaining} remaining.`);
     btnContinue.style.display = 'inline-block';
   }
@@ -342,14 +377,14 @@ btnContinue?.addEventListener('click', async () => {
   const tab = await getActiveTab();
   try {
     btnContinue.style.display = 'none';
-    setStatus(chrome.i18n.getMessage('statusContinuingNextBatch'));
+    setStatus(t('statusContinuingNextBatch'));
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'AVON_FILL_CONTINUE' });
     if (response?.done) {
-      setStatus(chrome.i18n.getMessage('statusAllItemsCompleted'));
+      setStatus(t('statusAllItemsCompleted'));
       btnContinue.style.display = 'none';
     }
   } catch (e) {
-    setStatus(chrome.i18n.getMessage('statusUnableToContinue'));
+    setStatus(t('statusUnableToContinue'));
     btnContinue.style.display = 'inline-block';
   }
 });
@@ -364,9 +399,9 @@ btnProductEntry.addEventListener('click', async () => {
   const url = 'https://www2.avoncosmetics.ro/ro-home/orders/product-entry';
   try {
     await chrome.tabs.create({ url });
-    setStatus(chrome.i18n.getMessage('statusOpenedProductEntry'));
+    setStatus(t('statusOpenedProductEntry'));
   } catch (err) {
-    setStatus(chrome.i18n.getMessage('statusUnableToOpenProductEntry'));
+    setStatus(t('statusUnableToOpenProductEntry'));
   }
 });
 

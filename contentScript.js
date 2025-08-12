@@ -11,6 +11,21 @@
     processedInBatch: 0,
   };
 
+  // Lightweight i18n access that respects selected language if i18n.js is present in the extension context
+  const t = (key, substitutions) => {
+    try {
+      if (typeof window !== 'undefined' && typeof window.i18nGet === 'function') {
+        const v = window.i18nGet(key, substitutions);
+        if (v) return v;
+      }
+    } catch {}
+    try {
+      const v = chrome.i18n?.getMessage?.(key, substitutions);
+      if (v) return v;
+    } catch {}
+    return '';
+  };
+
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!message) return;
     if (message.type === 'PING') {
@@ -35,14 +50,14 @@
     if (message.type === 'AVON_FILL_PRODUCTS') {
       const items = Array.isArray(message.items) ? message.items : [];
       if (!items.length) {
-        sendResponse({ ok: false, error: chrome.i18n?.getMessage?.('csNoItems') || 'No items.' });
+        sendResponse({ ok: false, error: t('csNoItems') || 'No items.' });
         return; // keep listener
       }
 
       try {
         // Guard: ensure we're on the product entry page (or at least structure exists)
         if (!document.querySelector('.pSrch-row')) {
-          sendResponse({ ok: false, error: chrome.i18n?.getMessage?.('csNoProductEntry') || 'Product Entry form not detected on this page.' });
+          sendResponse({ ok: false, error: t('csNoProductEntry') || 'Product Entry form not detected on this page.' });
           return;
         }
 
@@ -185,7 +200,7 @@
     if (message.type === 'AVON_FILL_CONTINUE') {
       try {
         if (!document.querySelector('.pSrch-row')) {
-          sendResponse({ ok: false, error: chrome.i18n?.getMessage?.('csNoProductEntry') || 'Product Entry form not detected on this page.' });
+          sendResponse({ ok: false, error: t('csNoProductEntry') || 'Product Entry form not detected on this page.' });
           return;
         }
         if (avonFillState.nextIndex >= avonFillState.queue.length) {
