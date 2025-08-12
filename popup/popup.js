@@ -1,4 +1,5 @@
 const statusEl = document.getElementById('status');
+const countsEl = document.getElementById('counts');
 const openOptions = document.getElementById('openOptions');
 const btnProductEntry = document.getElementById('btnProductEntry');
 let aliasList = [];
@@ -19,6 +20,10 @@ const btnContinue = document.getElementById('btnContinue');
 
 function setStatus(text) {
   statusEl.textContent = text;
+}
+
+function setCounts(text) {
+  if (countsEl) countsEl.textContent = text;
 }
 
 function getTargetTabIdFromUrl() {
@@ -46,8 +51,13 @@ function extractItems(text) {
 
   let s = text
     .replace(/[\u00D7\u2715]/g, 'x')
-    .replace(/[;,|\t\n\r]+/g, ' ')
-    .replace(/\s+/g, ' ')
+    // Normalize separators but preserve line breaks to keep per-line context
+    .replace(/[;,|]+/g, ' ')
+    .replace(/\t+/g, ' ')
+    // Collapse spaces around newlines and keep a single newline
+    .replace(/[ ]*\r?\n[ ]*/g, '\n')
+    // Collapse multiple spaces (not including newlines)
+    .replace(/[ ]{2,}/g, ' ')
     .trim();
 
   // Remove page markers like "Pag"/"Pg" followed by a number and a separator before a code,
@@ -89,18 +99,22 @@ function extractItems(text) {
     }
   }
 
-  // Quantity markers like "2 buc", "2 bucăți", "2 bucati" near a code
-  let re = /\b(\d{5})\b[\s\S]{0,80}?\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)\b/gi;
+  // Quantity markers like "2 buc", "2 bucăți", "2 bucati" near a code.
+  // Guard against crossing another 5-digit code between the code and the quantity.
+  let re = /\b(\d{5})\b([^\n\r]{0,80}?)\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)\b/gi;
   for (let m; (m = re.exec(s)); ) {
-    const [full, code, qty] = m;
+    const [full, code, between, qty] = m;
+    // Skip if another 5-digit code appears in-between; that qty likely belongs to a later code
+    if (/\b\d{5}\b/.test(between)) continue;
     if (!overlaps(m.index, m.index + full.length)) {
       addQty(code, qty, m.index, m.index + full.length);
     }
   }
-  // Also support the reversed order: "2 buc" ... then the 5-digit code
-  re = /\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)\b[\s\S]{0,80}?\b(\d{5})\b/gi;
+  // Also support the reversed order: "2 buc" ... then the 5-digit code, with the same guard
+  re = /\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)\b([^\n\r]{0,80}?)\b(\d{5})\b/gi;
   for (let m; (m = re.exec(s)); ) {
-    const [full, qty, code] = m;
+    const [full, qty, between, code] = m;
+    if (/\b\d{5}\b/.test(between)) continue;
     if (!overlaps(m.index, m.index + full.length)) {
       addQty(code, qty, m.index, m.index + full.length);
     }
@@ -179,6 +193,18 @@ function handleProcess() {
   currentItems = extractItems(input);
   renderTable(currentItems, null);
   setStatus(currentItems.length ? chrome.i18n.getMessage('statusFormatted') : chrome.i18n.getMessage('statusNoCodes'));
+
+  // Sanity: count 5-digit codes in input (total and unique) vs output rows
+  try {
+    const allInputCodes = Array.from(input.matchAll(/\b(\d{5})\b/g)).map(m => m[1]);
+    const uniqueInputCodes = Array.from(new Set(allInputCodes));
+    const outputCodes = currentItems.map(it => it.code);
+    const outputUniqueCodes = Array.from(new Set(outputCodes));
+    const mismatch = uniqueInputCodes.length !== outputUniqueCodes.length;
+    setCounts(`Codes in input: total ${allInputCodes.length}, unique ${uniqueInputCodes.length} | output: ${outputCodes.length} (${outputUniqueCodes.length} unique)${mismatch ? ' ⚠️' : ''}`);
+  } catch {
+    setCounts('');
+  }
 }
 
 btnProcess?.addEventListener('click', handleProcess);
