@@ -1,6 +1,11 @@
 const statusEl = document.getElementById('status');
 const openOptions = document.getElementById('openOptions');
 const btnProductEntry = document.getElementById('btnProductEntry');
+let aliasList = [];
+
+function escapeRegexLiteral(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 // Formatter controls
 const inputArea = document.getElementById('inputArea');
@@ -45,6 +50,10 @@ function extractItems(text) {
     .replace(/\s+/g, ' ')
     .trim();
 
+  // Remove page markers like "Pag"/"Pg" followed by a number and a separator before a code,
+  // so the page number isn't misinterpreted as quantity (e.g., "Pag 32-49361").
+  s = s.replace(/\bP(?:ag|g)\.?\s*\d+\s*[-:\/]\s*/gi, ' ');
+
   const codeToQuantity = new Map();
   const codeFirstIndex = new Map();
   const usedRanges = [];
@@ -58,7 +67,46 @@ function extractItems(text) {
     addRange(idxStart, idxEnd);
   };
 
-  let re = /(\d+)\s*[xX*]\s*(\d{5})/g;
+  // Aliases: map phrases like "pungi" to a 5-digit code, with adjacent numeric quantity
+  if (Array.isArray(aliasList) && aliasList.length) {
+    for (const { phrase, code } of aliasList) {
+      if (!phrase || !/^\d{5}$/.test(code)) continue;
+      const p = escapeRegexLiteral(phrase.trim());
+      let reAlias = new RegExp(`\\b(\\d{1,2})\\s*${p}\\b`, 'gi');
+      for (let m; (m = reAlias.exec(s)); ) {
+        const [full, qty] = m;
+        if (!overlaps(m.index, m.index + full.length)) {
+          addQty(code, qty, m.index, m.index + full.length);
+        }
+      }
+      reAlias = new RegExp(`\\b${p}\\s*(\\d{1,2})\\b`, 'gi');
+      for (let m; (m = reAlias.exec(s)); ) {
+        const [full, qty] = m;
+        if (!overlaps(m.index, m.index + full.length)) {
+          addQty(code, qty, m.index, m.index + full.length);
+        }
+      }
+    }
+  }
+
+  // Quantity markers like "2 buc", "2 bucăți", "2 bucati" near a code
+  let re = /\b(\d{5})\b[\s\S]{0,80}?\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)\b/gi;
+  for (let m; (m = re.exec(s)); ) {
+    const [full, code, qty] = m;
+    if (!overlaps(m.index, m.index + full.length)) {
+      addQty(code, qty, m.index, m.index + full.length);
+    }
+  }
+  // Also support the reversed order: "2 buc" ... then the 5-digit code
+  re = /\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)\b[\s\S]{0,80}?\b(\d{5})\b/gi;
+  for (let m; (m = re.exec(s)); ) {
+    const [full, qty, code] = m;
+    if (!overlaps(m.index, m.index + full.length)) {
+      addQty(code, qty, m.index, m.index + full.length);
+    }
+  }
+
+  re = /(\d+)\s*[xX*]\s*(\d{5})/g;
   for (let m; (m = re.exec(s)); ) {
     const [full, qty, code] = m;
     addQty(code, qty, m.index, m.index + full.length);
@@ -167,16 +215,29 @@ function saveLastInputDebounced() {
 
 inputArea?.addEventListener('input', saveLastInputDebounced);
 
-(async () => {
+  (async () => {
+    try {
+      // Load aliases (sync) and last input (local)
+      const [{ aliases = [] } = {}, { lastInput = '' } = {}] = await Promise.all([
+        chrome.storage?.sync?.get?.(['aliases']) || {},
+        chrome.storage?.local?.get?.(['lastInput']) || {}
+      ]);
+      aliasList = Array.isArray(aliases) ? aliases : [];
+      if (lastInput && inputArea) {
+        inputArea.value = lastInput;
+        handleProcess();
+      }
+    } catch {}
+  })();
+
+  // React to alias updates from Options without reopening the popup
   try {
-    const stored = await chrome.storage?.local?.get(['lastInput']);
-    const lastInput = stored?.lastInput || '';
-    if (lastInput && inputArea) {
-      inputArea.value = lastInput;
-      handleProcess();
-    }
+    chrome.storage?.onChanged?.addListener((changes, areaName) => {
+      if (areaName === 'sync' && changes?.aliases) {
+        aliasList = Array.isArray(changes.aliases.newValue) ? changes.aliases.newValue : [];
+      }
+    });
   } catch {}
-})();
 
 // Send to active tab for automated filling
 btnFill?.addEventListener('click', async () => {

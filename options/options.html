@@ -20,6 +20,20 @@
         <option value="en" data-i18n="language_en">English</option>
       </select>
     </label>
+    <hr />
+    <h2 data-i18n="aliasesHeading">Aliases</h2>
+    <p data-i18n="aliasesHelp">Map words/phrases to 5-digit codes. During parsing, "10 pungi" adds that code with quantity 10.</p>
+    <table id="aliasesTable" aria-label="Aliases" style="border-collapse: collapse; margin-bottom: 8px;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding-right: 8px;" data-i18n="aliasPhrase">Phrase</th>
+          <th style="text-align:left; padding-right: 8px;" data-i18n="aliasCode">Code</th>
+          <th style="text-align:left;" data-i18n="aliasActions">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="aliasesTbody"></tbody>
+    </table>
+    <button id="addAlias" data-i18n="addAlias">Add alias</button>
     <button id="save" data-i18n="save">Save</button>
     <p id="status" role="status"></p>
     <script src="../i18n.js"></script>
