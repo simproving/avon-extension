@@ -101,7 +101,7 @@ function extractItems(text) {
 
   // Quantity markers like "2 buc", "2 bucăți", "2 bucati" near a code.
   // Guard against crossing another 5-digit code between the code and the quantity.
-  let re = /\b(\d{5})\b([^\n\r]{0,80}?)\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)\b/gi;
+  let re = /\b(\d{5})\b([^\n\r]{0,80}?)\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)(?=\W|$)/gi;
   for (let m; (m = re.exec(s)); ) {
     const [full, code, between, qty] = m;
     // Skip if another 5-digit code appears in-between; that qty likely belongs to a later code
@@ -111,10 +111,14 @@ function extractItems(text) {
     }
   }
   // Also support the reversed order: "2 buc" ... then the 5-digit code, with the same guard
-  re = /\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)\b([^\n\r]{0,80}?)\b(\d{5})\b/gi;
+  re = /\b(\d{1,2})\s*(?:buc(?:a(?:ti|ți|ţi)|ă(?:ti|ți|ţi))?|buc\.?|bucati|bucăți|bucăţi)(?=\W|$)([^\n\r]{0,80}?)\b(\d{5})\b/gi;
   for (let m; (m = re.exec(s)); ) {
     const [full, qty, between, code] = m;
     if (/\b\d{5}\b/.test(between)) continue;
+    // If there's a code immediately before this quantity with a dash/sep (e.g., "28605-2buc"),
+    // then the quantity belongs to the previous code, not the next one. Skip this reverse match.
+    const pre = s.slice(Math.max(0, m.index - 16), m.index);
+    if (/\d{5}\s*(?:[-:\/]|[\(\[]\s*)\s*$/.test(pre)) continue;
     if (!overlaps(m.index, m.index + full.length)) {
       addQty(code, qty, m.index, m.index + full.length);
     }
