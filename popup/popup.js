@@ -200,7 +200,18 @@ function handleProcess() {
 
   // Sanity: count 5-digit codes in input (total and unique) vs output rows
   try {
-    const allInputCodes = Array.from(input.matchAll(/\b(\d{5})\b/g)).map(m => m[1]);
+    // Count 5-digit codes not part of a longer digit run; allow letters after (e.g., "07575x2")
+    // Prefer lookbehind when available; fall back to a non-digit prefix capture otherwise.
+    let reInputCodes;
+    try {
+      reInputCodes = new RegExp('(?<!\\d)(\\d{5})(?!\\d)', 'g');
+    } catch {
+      reInputCodes = /(?:^|[^0-9])(\d{5})(?!\d)/g;
+    }
+    const allInputCodes = [];
+    for (const m of input.matchAll(reInputCodes)) {
+      allInputCodes.push(m[1]);
+    }
     const uniqueInputCodes = Array.from(new Set(allInputCodes));
     const outputCodes = currentItems.map(it => it.code);
     const outputUniqueCodes = Array.from(new Set(outputCodes));
