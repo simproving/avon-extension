@@ -203,6 +203,7 @@ const btnClear = document.getElementById('btnClear');
 const btnCopy = document.getElementById('btnCopy');
 const btnFill = document.getElementById('btnFill');
 const btnContinue = document.getElementById('btnContinue');
+const btnLoadExample = document.getElementById('btnLoadExample');
 
 function setStatus(text) {
   statusEl.textContent = text;
@@ -572,6 +573,23 @@ btnContinue?.addEventListener('click', async () => {
   } catch (e) {
     setStatus(t('statusUnableToContinue'));
     btnContinue.style.display = 'inline-block';
+  }
+});
+
+// Load example input from bundled text file
+btnLoadExample?.addEventListener('click', async () => {
+  try {
+    const resp = await fetch(chrome.runtime.getURL('example_input.txt'));
+    if (!resp.ok) throw new Error('fetch failed');
+    const text = await resp.text();
+    if (inputArea) {
+      inputArea.value = text.trim();
+      handleProcess();
+      try { chrome.storage?.local?.set?.({ lastInput: inputArea.value }); } catch {}
+      setStatus(t('statusLoadedExample') || 'Loaded example input.');
+    }
+  } catch (e) {
+    setStatus(t('statusUnableToLoadExample') || 'Unable to load example.');
   }
 });
 

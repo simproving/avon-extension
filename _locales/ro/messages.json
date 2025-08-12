@@ -13,6 +13,8 @@
   "btnFill": { "message": "Completează pe pagină" },
   "btnFillTitle": { "message": "Completează pagina Avon Product Entry folosind rezultatul" },
   "btnContinue": { "message": "Continuă" },
+  "btnLoadExample": { "message": "Încarcă exemplu" },
+  "btnLoadExampleTitle": { "message": "Încarcă exemplul inclus" },
   "labelOutput": { "message": "Rezultat" },
   "tableAria": { "message": "Coduri formatate" },
   "thIndex": { "message": "#" },
@@ -37,6 +39,8 @@
   "statusContinuingNextBatch": { "message": "Se continuă cu următorul lot..." },
   "statusAllItemsCompleted": { "message": "Toate elementele au fost finalizate." },
   "statusUnableToContinue": { "message": "Nu se poate continua." },
+  "statusLoadedExample": { "message": "Exemplu încărcat." },
+  "statusUnableToLoadExample": { "message": "Nu se poate încărca exemplul." },
   
   "countsSummary": { "message": "Coduri în intrare: total $1, unic $2 | rezultat: $3 ($4 unice)" },
   "countsMismatchIndicator": { "message": " ⚠️" },

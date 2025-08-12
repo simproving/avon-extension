@@ -13,6 +13,8 @@
   "btnFill": { "message": "Fill On Page" },
   "btnFillTitle": { "message": "Fill the Avon Product Entry page using the output" },
   "btnContinue": { "message": "Continue" },
+  "btnLoadExample": { "message": "Load Example" },
+  "btnLoadExampleTitle": { "message": "Load the bundled example input" },
   "labelOutput": { "message": "Output" },
   "tableAria": { "message": "Formatted codes" },
   "thIndex": { "message": "#" },
@@ -37,6 +39,8 @@
   "statusContinuingNextBatch": { "message": "Continuing with next batch..." },
   "statusAllItemsCompleted": { "message": "All items completed." },
   "statusUnableToContinue": { "message": "Unable to continue." },
+  "statusLoadedExample": { "message": "Loaded example input." },
+  "statusUnableToLoadExample": { "message": "Unable to load example." },
   
   "countsSummary": { "message": "Codes in input: total $1, unique $2 | output: $3 ($4 unique)" },
   "countsMismatchIndicator": { "message": " ⚠️" },
