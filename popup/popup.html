@@ -11,25 +11,25 @@
       <h1 data-i18n="popupTitle">Avon</h1>
       <section id="loginManager">
         <div class="login-row">
-          <label for="loginName">Name</label>
-          <input id="loginName" type="text" placeholder="e.g. Personal, Work" />
+          <label for="loginName" data-i18n="loginNameLabel">Name</label>
+          <input id="loginName" type="text" data-i18n-placeholder="loginNamePlaceholder" placeholder="" />
         </div>
         <div class="login-row">
-          <label for="loginUsername">Username</label>
+          <label for="loginUsername" data-i18n="loginUsernameLabel">Username</label>
           <input id="loginUsername" type="text" autocomplete="username" />
         </div>
         <div class="login-row">
-          <label for="loginPassword">Password</label>
+          <label for="loginPassword" data-i18n="loginPasswordLabel">Password</label>
           <div class="password-wrap">
             <input id="loginPassword" type="password" autocomplete="current-password" />
-            <button id="btnTogglePassword" type="button" aria-label="Show password" title="Show password">👁</button>
+            <button id="btnTogglePassword" type="button" data-i18n-aria-label="loginToggleShow" data-i18n-title="loginToggleShow" aria-label="" title="">👁</button>
           </div>
         </div>
         <div class="login-controls">
-          <button id="btnSaveLogin">Save</button>
-          <select id="loginSelect" title="Saved logins"></select>
-          <button id="btnSendLogin">Send to Site</button>
-          <button id="btnDeleteLogin" title="Delete selected login">Delete</button>
+          <button id="btnSaveLogin" data-i18n="btnSaveLogin">Save</button>
+          <select id="loginSelect" data-i18n-title="loginSelectTitle" title=""></select>
+          <button id="btnSendLogin" data-i18n="btnSendLogin">Send to Site</button>
+          <button id="btnDeleteLogin" data-i18n="btnDeleteLogin" data-i18n-title="btnDeleteLoginTitle" title="">Delete</button>
         </div>
       </section>
       <button id="btnProductEntry" data-i18n="btnProductEntry">Open Product Entry</button>

@@ -47,7 +47,7 @@ function renderLoginSelect() {
   if (!logins.length) {
     const opt = document.createElement('option');
     opt.value = '';
-    opt.textContent = 'No saved logins';
+    opt.textContent = t('loginSelectEmpty') || 'No saved logins';
     loginSelectEl.appendChild(opt);
     loginSelectEl.disabled = true;
     return;
@@ -58,7 +58,9 @@ function renderLoginSelect() {
     opt.value = String(i);
     const name = (login?.name || '').trim();
     const user = (login?.username || '').trim();
-    const label = name && user ? `${name} (${user})` : (name || user || `Login ${i + 1}`);
+    const label = name && user
+      ? `${name} (${user})`
+      : (name || user || (t('loginDefaultLabel', [String(i + 1)]) || `Login ${i + 1}`));
     opt.textContent = label;
     opt.title = label;
     loginSelectEl.appendChild(opt);
@@ -90,7 +92,7 @@ btnSaveLoginEl?.addEventListener('click', () => {
   const username = loginUsernameEl?.value?.trim() || '';
   const password = loginPasswordEl?.value || '';
   if (!username) {
-    setStatus('Please enter a username to save.');
+    setStatus(t('loginPleaseEnterUsername') || 'Please enter a username to save.');
     return;
   }
   const labeledName = name || username;
@@ -109,7 +111,7 @@ btnSaveLoginEl?.addEventListener('click', () => {
   }
   writeSavedLogins(current);
   renderLoginSelect();
-  setStatus('Login saved locally.');
+  setStatus(t('loginSaved') || 'Login saved locally.');
 });
 
 loginSelectEl?.addEventListener('change', () => {
@@ -129,7 +131,7 @@ btnDeleteLoginEl?.addEventListener('click', () => {
   const logins = readSavedLogins();
   const idx = Number(loginSelectEl?.value);
   if (!Number.isInteger(idx) || idx < 0 || idx >= logins.length) {
-    setStatus('No saved login selected.');
+    setStatus(t('loginNoneSelected') || 'No saved login selected.');
     return;
   }
   logins.splice(idx, 1);
@@ -138,13 +140,13 @@ btnDeleteLoginEl?.addEventListener('click', () => {
   const newIdx = Math.min(idx, Math.max(0, logins.length - 1));
   writeSelectedLoginIndex(logins.length ? newIdx : -1);
   renderLoginSelect();
-  setStatus('Login deleted.');
+  setStatus(t('loginDeleted') || 'Login deleted.');
 });
 
 btnSendLoginEl?.addEventListener('click', async () => {
   const creds = getSelectedOrTypedLogin();
   if (!creds || !creds.username) {
-    setStatus('Nothing to send.');
+    setStatus(t('loginNothingToSend') || 'Nothing to send.');
     return;
   }
   try {
@@ -155,12 +157,12 @@ btnSendLoginEl?.addEventListener('click', async () => {
       password: creds.password || ''
     });
     if (response?.ok) {
-      setStatus('Credentials sent to page.');
+      setStatus(t('loginSentOk') || 'Credentials sent to page.');
     } else {
-      setStatus(response?.error || 'Unable to send credentials.');
+      setStatus(response?.error || t('loginUnableToSend') || 'Unable to send credentials.');
     }
   } catch (e) {
-    setStatus('Unable to communicate with page.');
+    setStatus(t('statusUnableToCommunicate') || 'Unable to communicate with page.');
   }
 });
 
@@ -184,8 +186,8 @@ btnTogglePasswordEl?.addEventListener('click', () => {
   const isHidden = loginPasswordEl.type === 'password';
   loginPasswordEl.type = isHidden ? 'text' : 'password';
   if (btnTogglePasswordEl) {
-    btnTogglePasswordEl.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
-    btnTogglePasswordEl.title = isHidden ? 'Hide password' : 'Show password';
+    btnTogglePasswordEl.setAttribute('aria-label', isHidden ? (t('loginToggleHide') || 'Hide password') : (t('loginToggleShow') || 'Show password'));
+    btnTogglePasswordEl.title = isHidden ? (t('loginToggleHide') || 'Hide password') : (t('loginToggleShow') || 'Show password');
     btnTogglePasswordEl.textContent = isHidden ? '🙈' : '👁';
   }
 });
