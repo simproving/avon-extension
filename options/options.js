@@ -29,7 +29,8 @@ function createAliasRow(alias) {
 
   const tdActions = document.createElement('td');
   const removeBtn = document.createElement('button');
-  removeBtn.textContent = chrome.i18n.getMessage('remove') || 'Remove';
+  removeBtn.setAttribute('data-i18n', 'remove');
+  removeBtn.textContent = '';
   removeBtn.addEventListener('click', () => {
     tr.remove();
   });
@@ -38,6 +39,8 @@ function createAliasRow(alias) {
   tr.appendChild(tdPhrase);
   tr.appendChild(tdCode);
   tr.appendChild(tdActions);
+  // Apply i18n for dynamically created elements
+  try { window.applyI18n?.(tr); } catch {}
   return tr;
 }
 
