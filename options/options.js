@@ -1,4 +1,4 @@
-const input = document.getElementById('favoriteColor');
+const languageSelect = document.getElementById('language');
 const statusEl = document.getElementById('status');
 const saveBtn = document.getElementById('save');
 
@@ -7,14 +7,14 @@ function setStatus(text) {
 }
 
 async function restore() {
-  const { favoriteColor = '' } = await chrome.storage.sync.get('favoriteColor');
-  input.value = favoriteColor;
+  const { language = 'ro' } = await chrome.storage.sync.get(['language']);
+  if (languageSelect) languageSelect.value = language;
 }
 
 async function save() {
-  const favoriteColor = input.value.trim();
-  await chrome.storage.sync.set({ favoriteColor });
-  setStatus('Saved.');
+  const language = languageSelect?.value || 'ro';
+  await chrome.storage.sync.set({ language });
+  setStatus(chrome.i18n.getMessage('saved'));
 }
 
 saveBtn.addEventListener('click', save);

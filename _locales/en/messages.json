@@ -1,0 +1,56 @@
+{
+  "appName": { "message": "Avon Extension" },
+  "appDesc": { "message": "Starter Chrome Extension (MV3) scaffold." },
+  "appActionTitle": { "message": "Avon" },
+
+  "popupTitle": { "message": "Avon" },
+  "labelInput": { "message": "Input" },
+  "inputPlaceholder": { "message": "Paste messy text with 5-digit product codes and optional quantities, e.g. 2x11155 99911 77333x3" },
+  "btnProcess": { "message": "Process" },
+  "btnClear": { "message": "Clear" },
+  "btnCopy": { "message": "Copy" },
+  "btnCopyTitle": { "message": "Copy output to clipboard" },
+  "btnFill": { "message": "Fill On Page" },
+  "btnFillTitle": { "message": "Fill the Avon Product Entry page using the output" },
+  "btnContinue": { "message": "Continue" },
+  "labelOutput": { "message": "Output" },
+  "tableAria": { "message": "Formatted codes" },
+  "thIndex": { "message": "#" },
+  "thCode": { "message": "Code" },
+  "thQty": { "message": "Qty" },
+  
+  "btnProductEntry": { "message": "Open Product Entry" },
+  "openOptions": { "message": "Open Options" },
+
+  "statusFormatted": { "message": "Formatted." },
+  "statusNoCodes": { "message": "No 5-digit codes found." },
+  "statusCleared": { "message": "Cleared." },
+  "statusCopied": { "message": "Copied output." },
+  "statusCopyFailed": { "message": "Copy failed." },
+  "statusNothingToFill": { "message": "Nothing to fill." },
+  "statusQueuedStarting": { "message": "Queued $1 item(s). Starting first 30..." },
+  "statusFillFailed": { "message": "Fill failed." },
+  "statusUnableToCommunicate": { "message": "Unable to communicate with page." },
+  "statusApplyingRow": { "message": "Applying row $1 / $2" },
+  "statusFillComplete": { "message": "Fill complete." },
+  "statusPausedAfter": { "message": "Paused after $1 items this batch. $2 remaining. Please review on the Avon page and press Continue." },
+  "statusContinuingNextBatch": { "message": "Continuing with next batch..." },
+  "statusAllItemsCompleted": { "message": "All items completed." },
+  "statusUnableToContinue": { "message": "Unable to continue." },
+  
+  "statusOpenedProductEntry": { "message": "Opened Product Entry." },
+  "statusUnableToOpenProductEntry": { "message": "Unable to open Product Entry." },
+  "alertInjectedFromPopup": { "message": "Injected from Avon popup" },
+
+  "optionsTitle": { "message": "Avon Options" },
+  "headingOptions": { "message": "Options" },
+  "save": { "message": "Save" },
+  "saved": { "message": "Saved." },
+
+  "languageLabel": { "message": "Language:" },
+  "language_ro": { "message": "Romanian" },
+  "language_en": { "message": "English" },
+
+  "csNoItems": { "message": "No items." },
+  "csNoProductEntry": { "message": "Product Entry form not detected on this page." }
+}

@@ -3,33 +3,40 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Avon</title>
+    <title data-i18n="popupTitle">Avon</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <main>
-      <h1>Avon</h1>
+      <h1 data-i18n="popupTitle">Avon</h1>
       <section class="formatter">
-        <label for="inputArea">Input</label>
-        <textarea id="inputArea" placeholder="Paste messy text with 5-digit product codes and optional quantities, e.g. 2x11155 99911 77333x3"></textarea>
+        <label for="inputArea" data-i18n="labelInput">Input</label>
+        <textarea id="inputArea" data-i18n-placeholder="inputPlaceholder" placeholder=""></textarea>
         <div class="controls-row">
-          <button id="btnProcess">Process</button>
-          <button id="btnClear">Clear</button>
-          <button id="btnCopy" title="Copy output to clipboard">Copy</button>
-          <button id="btnFill" title="Fill the Avon Product Entry page using the output">Fill On Page</button>
+          <button id="btnProcess" data-i18n="btnProcess">Process</button>
+          <button id="btnClear" data-i18n="btnClear">Clear</button>
+          <button id="btnCopy" data-i18n-title="btnCopyTitle" data-i18n="btnCopy">Copy</button>
+          <button id="btnFill" data-i18n-title="btnFillTitle" data-i18n="btnFill">Fill On Page</button>
+          <button id="btnContinue" data-i18n="btnContinue" title="" style="display:none">Continue</button>
         </div>
-        <label for="outputArea">Output</label>
-        <textarea id="outputArea" readonly placeholder="Formatted codes will appear here, e.g.&#10;11155 x 2&#10;99911&#10;77333 x 3"></textarea>
+        <label data-i18n="labelOutput">Output</label>
+        <div id="outputTableWrapper">
+          <table id="outputTable" data-i18n-aria-label="tableAria" aria-label="">
+            <thead>
+              <tr><th data-i18n="thIndex">#</th><th data-i18n="thCode">Code</th><th data-i18n="thQty">Qty</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </section>
-      <button id="btnPing">Ping</button>
-      <button id="btnHighlight">Highlight Selection</button>
-      <button id="btnInject">Inject Alert</button>
-      <button id="btnProductEntry">Open Product Entry</button>
+      
+      <button id="btnProductEntry" data-i18n="btnProductEntry">Open Product Entry</button>
       <p id="status" role="status"></p>
       <p>
-        <a href="#" id="openOptions">Open Options</a>
+        <a href="#" id="openOptions" data-i18n="openOptions">Open Options</a>
       </p>
     </main>
+    <script src="../i18n.js"></script>
     <script src="popup.js" type="module"></script>
   </body>
   </html>

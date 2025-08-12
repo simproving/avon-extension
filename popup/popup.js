@@ -1,42 +1,53 @@
 const statusEl = document.getElementById('status');
-const btnPing = document.getElementById('btnPing');
-const btnHighlight = document.getElementById('btnHighlight');
-const btnInject = document.getElementById('btnInject');
 const openOptions = document.getElementById('openOptions');
 const btnProductEntry = document.getElementById('btnProductEntry');
 
 // Formatter controls
 const inputArea = document.getElementById('inputArea');
-const outputArea = document.getElementById('outputArea');
+const outputTable = document.getElementById('outputTable');
+const outputTbody = outputTable ? outputTable.querySelector('tbody') : null;
 const btnProcess = document.getElementById('btnProcess');
 const btnClear = document.getElementById('btnClear');
 const btnCopy = document.getElementById('btnCopy');
 const btnFill = document.getElementById('btnFill');
+const btnContinue = document.getElementById('btnContinue');
 
 function setStatus(text) {
   statusEl.textContent = text;
 }
 
+function getTargetTabIdFromUrl() {
+  try {
+    const params = new URLSearchParams(location.search || '');
+    const raw = params.get('targetTabId');
+    const num = raw ? Number(raw) : NaN;
+    return Number.isInteger(num) ? num : null;
+  } catch {
+    return null;
+  }
+}
+
 async function getActiveTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const targetId = getTargetTabIdFromUrl();
+  if (targetId != null) {
+    return { id: targetId };
+  }
+  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   return tab;
 }
 
-function processMessyInput(text) {
-  if (!text || typeof text !== 'string') return '';
+function extractItems(text) {
+  if (!text || typeof text !== 'string') return [];
 
-  // Normalize common separators and symbols
   let s = text
-    .replace(/[\u00D7\u2715]/g, 'x') // ×, ✕ to x
-    .replace(/[;,|\t\n\r]+/g, ' ') // to spaces
-    .replace(/\s+/g, ' ') // collapse spaces
+    .replace(/[\u00D7\u2715]/g, 'x')
+    .replace(/[;,|\t\n\r]+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
   const codeToQuantity = new Map();
   const codeFirstIndex = new Map();
-  /** @type {{start:number,end:number}[]} */
   const usedRanges = [];
-
   const addRange = (start, end) => usedRanges.push({ start, end });
   const overlaps = (start, end) => usedRanges.some(r => !(end <= r.start || start >= r.end));
   const addQty = (code, qty, idxStart, idxEnd) => {
@@ -47,14 +58,11 @@ function processMessyInput(text) {
     addRange(idxStart, idxEnd);
   };
 
-  // 1) qty x code  e.g., 2x11155 or 2 x 11155 or 2*11155
   let re = /(\d+)\s*[xX*]\s*(\d{5})/g;
   for (let m; (m = re.exec(s)); ) {
     const [full, qty, code] = m;
     addQty(code, qty, m.index, m.index + full.length);
   }
-
-  // 2) code x qty  e.g., 11155x3 or 11155 x 3 or 11155*3
   re = /(\d{5})\s*[xX*]\s*(\d+)/g;
   for (let m; (m = re.exec(s)); ) {
     const [full, code, qty] = m;
@@ -62,8 +70,6 @@ function processMessyInput(text) {
       addQty(code, qty, m.index, m.index + full.length);
     }
   }
-
-  // 3) code(sep)qty e.g., 11155-3, 11155:3, 11155/3, 11155(3), 11155[3]
   re = /(\d{5})\s*(?:[-:\/]|[\(\[]\s*)(\d+)\s*(?:[\)\]])?/g;
   for (let m; (m = re.exec(s)); ) {
     const [full, code, qty] = m;
@@ -71,8 +77,6 @@ function processMessyInput(text) {
       addQty(code, qty, m.index, m.index + full.length);
     }
   }
-
-  // 4) qty(sep)code e.g., 3-11155, 3:11155, 3/11155, (3)11155, [3]11155
   re = /(\d+)\s*(?:[-:\/]|[\(\[]\s*)(\d{5})\s*(?:[\)\]])?/g;
   for (let m; (m = re.exec(s)); ) {
     const [full, qty, code] = m;
@@ -80,8 +84,6 @@ function processMessyInput(text) {
       addQty(code, qty, m.index, m.index + full.length);
     }
   }
-
-  // 5) Standalone 5-digit codes → quantity 1
   re = /\b(\d{5})\b/g;
   for (let m; (m = re.exec(s)); ) {
     const [full, code] = m;
@@ -92,37 +94,58 @@ function processMessyInput(text) {
     }
   }
 
-  // Produce ordered lines by first appearance in text
   const codes = Array.from(codeToQuantity.keys());
   codes.sort((a, b) => (codeFirstIndex.get(a) ?? 0) - (codeFirstIndex.get(b) ?? 0));
+  return codes.map(code => ({ code, qty: codeToQuantity.get(code) || 1 }));
+}
 
-  const lines = codes.map(code => {
-    const qty = codeToQuantity.get(code) || 0;
-    return qty > 1 ? `${code} x ${qty}` : `${code}`;
+function itemsToLines(items) {
+  return items.map(it => `${it.code} x ${it.qty}`).join('\n');
+}
+
+let currentItems = [];
+let lastProcessedIndex = -1;
+
+function renderTable(items, activeIndex = null) {
+  if (!outputTbody) return;
+  outputTbody.innerHTML = '';
+  items.forEach((it, i) => {
+    const tr = document.createElement('tr');
+    if (i <= lastProcessedIndex) tr.classList.add('completed-row');
+    if (activeIndex !== null && i === activeIndex) tr.classList.add('active-row');
+    const tdIdx = document.createElement('td');
+    tdIdx.textContent = String(i + 1);
+    const tdCode = document.createElement('td');
+    tdCode.textContent = it.code;
+    const tdQty = document.createElement('td');
+    tdQty.textContent = String(it.qty);
+    tr.appendChild(tdIdx);
+    tr.appendChild(tdCode);
+    tr.appendChild(tdQty);
+    outputTbody.appendChild(tr);
   });
-
-  return lines.join('\n');
 }
 
 function handleProcess() {
   const input = inputArea.value;
-  const output = processMessyInput(input);
-  outputArea.value = output;
-  setStatus(output ? 'Formatted.' : 'No 5-digit codes found.');
+  currentItems = extractItems(input);
+  renderTable(currentItems, null);
+  setStatus(currentItems.length ? chrome.i18n.getMessage('statusFormatted') : chrome.i18n.getMessage('statusNoCodes'));
 }
 
 btnProcess?.addEventListener('click', handleProcess);
 btnClear?.addEventListener('click', () => {
   inputArea.value = '';
   outputArea.value = '';
-  setStatus('Cleared.');
+  setStatus(chrome.i18n.getMessage('statusCleared'));
+  try { chrome.storage?.local?.remove?.('lastInput'); } catch {}
 });
 btnCopy?.addEventListener('click', async () => {
   try {
-    await navigator.clipboard.writeText(outputArea.value || '');
-    setStatus('Copied output.');
+    await navigator.clipboard.writeText(itemsToLines(currentItems));
+    setStatus(chrome.i18n.getMessage('statusCopied'));
   } catch {
-    setStatus('Copy failed.');
+    setStatus(chrome.i18n.getMessage('statusCopyFailed'));
   }
 });
 
@@ -131,24 +154,36 @@ inputArea?.addEventListener('paste', () => {
   setTimeout(handleProcess, 0);
 });
 
+// Persist last input (debounced) and restore on load
+let saveInputDebounceTimerId = null;
+function saveLastInputDebounced() {
+  if (!inputArea) return;
+  const value = inputArea.value;
+  if (saveInputDebounceTimerId) clearTimeout(saveInputDebounceTimerId);
+  saveInputDebounceTimerId = setTimeout(() => {
+    chrome.storage?.local?.set({ lastInput: value }).catch?.(() => {});
+  }, 300);
+}
+
+inputArea?.addEventListener('input', saveLastInputDebounced);
+
+(async () => {
+  try {
+    const stored = await chrome.storage?.local?.get(['lastInput']);
+    const lastInput = stored?.lastInput || '';
+    if (lastInput && inputArea) {
+      inputArea.value = lastInput;
+      handleProcess();
+    }
+  } catch {}
+})();
+
 // Send to active tab for automated filling
 btnFill?.addEventListener('click', async () => {
   const tab = await getActiveTab();
-  const lines = (outputArea.value || '').split(/\n+/).map(l => l.trim()).filter(Boolean);
-  if (lines.length === 0) {
-    setStatus('Nothing to fill.');
-    return;
-  }
-  // Convert to payload {code, qty}
-  const items = lines.map(line => {
-    const m = line.match(/^(\d{5})(?:\s*x\s*(\d+))?$/i);
-    const code = m ? m[1] : '';
-    const qty = m && m[2] ? Number(m[2]) : 1;
-    return { code, qty };
-  }).filter(i => /^\d{5}$/.test(i.code) && i.qty > 0);
-
+  const items = currentItems;
   if (!items.length) {
-    setStatus('No valid items to fill.');
+    setStatus(chrome.i18n.getMessage('statusNothingToFill'));
     return;
   }
 
@@ -157,46 +192,59 @@ btnFill?.addEventListener('click', async () => {
       type: 'AVON_FILL_PRODUCTS',
       items
     });
-    setStatus(response?.ok ? `Queued ${items.length} item(s).` : (response?.error || 'Fill failed.'));
+    setStatus(response?.ok
+      ? (chrome.i18n.getMessage('statusQueuedStarting', String(items.length)) || `Queued ${items.length}`)
+      : (response?.error || chrome.i18n.getMessage('statusFillFailed')));
+    if (response?.ok) {
+      btnContinue.style.display = 'none';
+    }
   } catch (err) {
-    setStatus('Unable to communicate with page.');
+    setStatus(chrome.i18n.getMessage('statusUnableToCommunicate'));
   }
 });
 
-btnPing.addEventListener('click', async () => {
-  const tab = await getActiveTab();
-  try {
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'PING' });
-    setStatus(`Content replied: ${response?.type}`);
-  } catch (err) {
-    // If content script isn't injected yet on this page, fall back to background
-    const bg = await chrome.runtime.sendMessage({ type: 'PING' });
-    setStatus(`Background replied: ${bg?.type}`);
+// Listen for progress notifications to highlight current row
+chrome.runtime.onMessage.addListener((message) => {
+  if (!message || !Array.isArray(currentItems) || !currentItems.length) return;
+  if (message.type === 'AVON_FILL_PROGRESS') {
+    const index = typeof message.index === 'number' ? message.index : null;
+    if (index !== null) {
+      lastProcessedIndex = Math.max(lastProcessedIndex, index);
+      renderTable(currentItems, index);
+      setStatus(chrome.i18n.getMessage('statusApplyingRow', [String(index + 1), String(currentItems.length)]) || `Applying row ${index + 1} / ${currentItems.length}`);
+    }
+  }
+  if (message.type === 'AVON_FILL_DONE') {
+    renderTable(currentItems, null);
+    setStatus(chrome.i18n.getMessage('statusFillComplete'));
+    btnContinue.style.display = 'none';
+  }
+  if (message.type === 'AVON_FILL_PAUSED') {
+    const { nextIndex, total, remaining, batchSize } = message;
+    lastProcessedIndex = nextIndex - 1;
+    renderTable(currentItems, null);
+    setStatus(chrome.i18n.getMessage('statusPausedAfter', [String(Math.min(nextIndex, batchSize)), String(remaining)])
+      || `Paused after ${Math.min(nextIndex, batchSize)} items. ${remaining} remaining.`);
+    btnContinue.style.display = 'inline-block';
   }
 });
 
-btnHighlight.addEventListener('click', async () => {
+btnContinue?.addEventListener('click', async () => {
   const tab = await getActiveTab();
   try {
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'HIGHLIGHT_SELECTION' });
-    setStatus(response?.ok ? 'Highlighted selection.' : 'No selection.');
-  } catch (err) {
-    setStatus('Unable to highlight.');
+    btnContinue.style.display = 'none';
+    setStatus(chrome.i18n.getMessage('statusContinuingNextBatch'));
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'AVON_FILL_CONTINUE' });
+    if (response?.done) {
+      setStatus(chrome.i18n.getMessage('statusAllItemsCompleted'));
+      btnContinue.style.display = 'none';
+    }
+  } catch (e) {
+    setStatus(chrome.i18n.getMessage('statusUnableToContinue'));
+    btnContinue.style.display = 'inline-block';
   }
 });
 
-btnInject.addEventListener('click', async () => {
-  const tab = await getActiveTab();
-  try {
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => alert('Injected from Avon popup'),
-    });
-    setStatus('Injected alert.');
-  } catch (err) {
-    setStatus('Injection failed.');
-  }
-});
 
 openOptions.addEventListener('click', async (e) => {
   e.preventDefault();
@@ -207,9 +255,9 @@ btnProductEntry.addEventListener('click', async () => {
   const url = 'https://www2.avoncosmetics.ro/ro-home/orders/product-entry';
   try {
     await chrome.tabs.create({ url });
-    setStatus('Opened Product Entry.');
+    setStatus(chrome.i18n.getMessage('statusOpenedProductEntry'));
   } catch (err) {
-    setStatus('Unable to open Product Entry.');
+    setStatus(chrome.i18n.getMessage('statusUnableToOpenProductEntry'));
   }
 });
 

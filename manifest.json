@@ -1,22 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Avon Extension",
+  "default_locale": "ro",
+  "name": "__MSG_appName__",
   "version": "0.1.0",
-  "description": "Starter Chrome Extension (MV3) scaffold.",
+  "description": "__MSG_appDesc__",
   "action": {
-    "default_title": "Avon",
-    "default_popup": "popup/popup.html"
+    "default_title": "__MSG_appActionTitle__"
   },
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["storage", "activeTab", "scripting"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": ["https://*.avoncosmetics.ro/*"],
   "options_page": "options/options.html",
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["https://*.avoncosmetics.ro/*"],
       "js": ["contentScript.js"],
       "run_at": "document_idle"
     }
