@@ -395,6 +395,8 @@ function itemsToLines(items) {
 
 let currentItems = [];
 let lastProcessedIndex = -1;
+const logsSection = document.getElementById('logsSection');
+const logsTbody = document.getElementById('logsTbody');
 
 function renderTable(items, activeIndex = null) {
   if (!outputTbody) return;
@@ -414,6 +416,134 @@ function renderTable(items, activeIndex = null) {
     tr.appendChild(tdQty);
     outputTbody.appendChild(tr);
   });
+}
+
+async function renderLogs() {
+  try {
+    console.log('renderLogs called');
+    const { fillHistory = [] } = await (chrome.storage?.local?.get?.(['fillHistory']) || {});
+    console.log('fillHistory from storage:', fillHistory);
+    const entries = Array.isArray(fillHistory) ? fillHistory.slice() : [];
+    // Sort newest first by date ISO string
+    entries.sort((a, b) => String(b?.date || '').localeCompare(String(a?.date || '')));
+    console.log('sorted entries:', entries);
+    if (logsTbody) {
+      logsTbody.innerHTML = '';
+      console.log('cleared logsTbody');
+    } else {
+      console.log('logsTbody not found');
+    }
+    for (const e of entries) {
+      const tr = document.createElement('tr');
+      tr.classList.add('log-entry');
+      tr.dataset.entryIndex = entries.indexOf(e);
+      
+      const tdDate = document.createElement('td');
+      const tdName = document.createElement('td');
+      const tdUser = document.createElement('td');
+      const tdTotal = document.createElement('td');
+      const d = e?.date ? new Date(e.date) : null;
+      tdDate.textContent = d && !isNaN(d.getTime()) ? d.toLocaleString() : (e?.date || '');
+      tdName.textContent = e?.name || '';
+      tdUser.textContent = e?.username || '';
+      tdTotal.textContent = String(e?.total != null ? e.total : '');
+      
+      // Add click indicator
+      tdTotal.innerHTML = `${String(e?.total != null ? e.total : '')} <span class="click-indicator">▶</span>`;
+      
+      // Make the row clickable
+      tr.style.cursor = 'pointer';
+      tr.addEventListener('click', () => toggleLogDetail(tr, e));
+      
+      tr.appendChild(tdDate);
+      tr.appendChild(tdName);
+      tr.appendChild(tdUser);
+      tr.appendChild(tdTotal);
+      if (logsTbody) {
+        logsTbody.appendChild(tr);
+        console.log('added row:', e);
+      }
+    }
+  } catch (error) {
+    console.error('Error in renderLogs:', error);
+  }
+}
+
+function toggleLogDetail(tr, entry) {
+  // Remove active class from all other rows
+  document.querySelectorAll('.log-entry').forEach(row => {
+    if (row !== tr) {
+      row.classList.remove('active');
+      const existingDetail = row.nextElementSibling;
+      if (existingDetail && existingDetail.classList.contains('log-detail')) {
+        existingDetail.remove();
+      }
+    }
+  });
+  
+  // Toggle current row
+  if (tr.classList.contains('active')) {
+    tr.classList.remove('active');
+    const existingDetail = tr.nextElementSibling;
+    if (existingDetail && existingDetail.classList.contains('log-detail')) {
+      existingDetail.remove();
+    }
+  } else {
+    tr.classList.add('active');
+    
+    // Create detail row
+    const detailRow = document.createElement('tr');
+    detailRow.classList.add('log-detail');
+    
+    const detailCell = document.createElement('td');
+    detailCell.colSpan = 4;
+    
+    if (entry.codes && Array.isArray(entry.codes) && entry.codes.length > 0) {
+      // Add a header showing total items
+      const headerDiv = document.createElement('div');
+      headerDiv.classList.add('detail-header');
+      headerDiv.innerHTML = `<strong>Codes filled: ${entry.codes.length}</strong>`;
+      detailCell.appendChild(headerDiv);
+      
+      const codesTable = document.createElement('table');
+      codesTable.classList.add('codes-table');
+      
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      const thCode = document.createElement('th');
+      thCode.textContent = 'Code';
+      const thQty = document.createElement('th');
+      thQty.textContent = 'Quantity';
+      headerRow.appendChild(thCode);
+      headerRow.appendChild(thQty);
+      thead.appendChild(headerRow);
+      codesTable.appendChild(thead);
+      
+      const tbody = document.createElement('tbody');
+      entry.codes.forEach(item => {
+        const row = document.createElement('tr');
+        const tdCode = document.createElement('td');
+        tdCode.textContent = item.code || '';
+        const tdQty = document.createElement('td');
+        tdQty.textContent = String(item.qty || 1);
+        row.appendChild(tdCode);
+        row.appendChild(tdQty);
+        tbody.appendChild(row);
+      });
+      codesTable.appendChild(tbody);
+      
+      detailCell.appendChild(codesTable);
+    } else {
+      detailCell.innerHTML = '<div class="detail-header"><em>No codes available for this entry</em></div>';
+      detailCell.style.fontStyle = 'italic';
+      detailCell.style.color = '#777';
+    }
+    
+    detailRow.appendChild(detailCell);
+    
+    // Insert after the clicked row
+    tr.parentNode.insertBefore(detailRow, tr.nextSibling);
+  }
 }
 
 function handleProcess() {
@@ -499,6 +629,8 @@ inputArea?.addEventListener('input', saveLastInputDebounced);
         inputArea.value = lastInput;
         handleProcess();
       }
+      // Initialize logs display
+      renderLogs();
     } catch {}
   })();
 
@@ -507,6 +639,10 @@ inputArea?.addEventListener('input', saveLastInputDebounced);
     chrome.storage?.onChanged?.addListener((changes, areaName) => {
       if (areaName === 'sync' && changes?.aliases) {
         aliasList = Array.isArray(changes.aliases.newValue) ? changes.aliases.newValue : [];
+      }
+      // Refresh logs when fill history changes
+      if (areaName === 'local' && changes?.fillHistory) {
+        renderLogs();
       }
     });
   } catch {}
@@ -521,9 +657,14 @@ btnFill?.addEventListener('click', async () => {
   }
 
   try {
+    const selectedLogin = getSelectedOrTypedLogin();
+    const loginName = selectedLogin?.name || '';
+    const loginUsername = selectedLogin?.username || '';
     const response = await chrome.tabs.sendMessage(tab.id, {
       type: 'AVON_FILL_PRODUCTS',
-      items
+      items,
+      loginName,
+      loginUsername
     });
     setStatus(response?.ok
       ? (t('statusQueuedStarting', [String(items.length), String(response?.batchSize || 30)]) || `Queued ${items.length}. Starting first ${response?.batchSize || 30}...`)
@@ -551,6 +692,8 @@ chrome.runtime.onMessage.addListener((message) => {
     renderTable(currentItems, null);
     setStatus(t('statusFillComplete'));
     btnContinue.style.display = 'none';
+    // Refresh logs to show the new entry
+    renderLogs();
   }
   if (message.type === 'AVON_FILL_PAUSED') {
     const { nextIndex, total, remaining, batchSize } = message;

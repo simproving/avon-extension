@@ -9,6 +9,10 @@
     inProgress: false,
     batchSize: 30,
     processedInBatch: 0,
+    originalItems: [],
+    logged: false,
+    loginName: '',
+    loginUsername: '',
   };
 
   // Lightweight i18n access that respects selected language if i18n.js is present in the extension context
@@ -91,6 +95,54 @@
         avonFillState.nextIndex = 0;
         avonFillState.processedInBatch = 0;
         avonFillState.inProgress = false;
+        avonFillState.originalItems = items.slice();
+        avonFillState.logged = false;
+        avonFillState.loginName = typeof message.loginName === 'string' ? message.loginName : '';
+        avonFillState.loginUsername = typeof message.loginUsername === 'string' ? message.loginUsername : '';
+
+        const appendFillHistoryLog = async (entry) => {
+          try {
+            console.log('appendFillHistoryLog called with:', entry);
+            const { fillHistory = [] } = await (chrome.storage?.local?.get?.(['fillHistory']) || {});
+            console.log('Current fillHistory:', fillHistory);
+            const history = Array.isArray(fillHistory) ? fillHistory : [];
+            history.push(entry);
+            while (history.length > 100) history.shift();
+            console.log('New history to save:', history);
+            await chrome.storage?.local?.set?.({ fillHistory: history });
+            console.log('fillHistory saved to storage');
+          } catch (error) {
+            console.error('Error in appendFillHistoryLog:', error);
+          }
+        };
+
+        const logIfNotLogged = async () => {
+          if (avonFillState.logged) return;
+          avonFillState.logged = true;
+          try {
+            console.log('Logging fill completion:', {
+              name: avonFillState.loginName,
+              username: avonFillState.loginUsername,
+              total: avonFillState.originalItems?.length || avonFillState.queue?.length || 0
+            });
+            const entry = {
+              date: new Date().toISOString(),
+              name: avonFillState.loginName || '',
+              username: avonFillState.loginUsername || '',
+              total: Array.isArray(avonFillState.originalItems)
+                ? avonFillState.originalItems.length
+                : (Array.isArray(avonFillState.queue) ? avonFillState.queue.length : 0),
+              codes: Array.isArray(avonFillState.originalItems) 
+                ? avonFillState.originalItems 
+                : (Array.isArray(avonFillState.queue) ? avonFillState.queue : [])
+            };
+            console.log('Log entry:', entry);
+            await appendFillHistoryLog(entry);
+            console.log('Log entry saved');
+          } catch (error) {
+            console.error('Error logging fill completion:', error);
+          }
+        };
 
         const parseQty = (n) => Math.max(1, Math.min(99, Number(n) || 1));
 
@@ -198,6 +250,8 @@
             const result = stepFill();
             if (result === 'done') {
               avonFillState.inProgress = false;
+              // Log completion once
+              try { logIfNotLogged(); } catch {}
               try { chrome.runtime.sendMessage({ type: 'AVON_FILL_DONE' }); } catch {}
               return;
             }
@@ -229,6 +283,7 @@
           return;
         }
         if (avonFillState.nextIndex >= avonFillState.queue.length) {
+          try { logIfNotLogged(); } catch {}
           try { chrome.runtime.sendMessage({ type: 'AVON_FILL_DONE' }); } catch {}
           sendResponse({ ok: true, done: true });
           return;
@@ -346,6 +401,7 @@
             const r = stepFill();
             if (r === 'done') {
               avonFillState.inProgress = false;
+              try { logIfNotLogged(); } catch {}
               try { chrome.runtime.sendMessage({ type: 'AVON_FILL_DONE' }); } catch {}
               return;
             }
