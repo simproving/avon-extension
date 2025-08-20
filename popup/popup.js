@@ -1,6 +1,5 @@
 const statusEl = document.getElementById('status');
 const countsEl = document.getElementById('counts');
-const openOptions = document.getElementById('openOptions');
 const btnProductEntry = document.getElementById('btnProductEntry');
 
 // Login Manager controls
@@ -759,11 +758,6 @@ btnLoadExample?.addEventListener('click', async () => {
 });
 
 
-openOptions.addEventListener('click', async (e) => {
-  e.preventDefault();
-  await chrome.runtime.openOptionsPage();
-});
-
 btnProductEntry.addEventListener('click', async () => {
   const url = 'https://www2.avoncosmetics.ro/ro-home/orders/product-entry';
   try {
@@ -773,5 +767,36 @@ btnProductEntry.addEventListener('click', async () => {
     setStatus(t('statusUnableToOpenProductEntry'));
   }
 });
+
+// Locale selector functionality
+const languageSelect = document.getElementById('language');
+
+async function restoreLanguage() {
+  try {
+    const { language = 'ro' } = await chrome.storage.sync.get(['language']);
+    if (languageSelect) languageSelect.value = language;
+  } catch (e) {
+    // ignore
+  }
+}
+
+async function saveLanguage() {
+  try {
+    const language = languageSelect?.value || 'ro';
+    await chrome.storage.sync.set({ language });
+    // Force reload of i18n to apply the new language
+    if (window.applyI18n) {
+      await window.applyI18n();
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
+// Initialize language selector
+if (languageSelect) {
+  restoreLanguage();
+  languageSelect.addEventListener('change', saveLanguage);
+}
 
 

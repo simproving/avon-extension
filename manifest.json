@@ -13,7 +13,6 @@
   },
   "permissions": ["storage", "activeTab", "scripting", "tabs"],
   "host_permissions": ["https://*.avoncosmetics.ro/*"],
-  "options_page": "options/options.html",
   "content_scripts": [
     {
       "matches": ["https://*.avoncosmetics.ro/*"],

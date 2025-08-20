@@ -56,9 +56,13 @@
       </section>
       <p id="counts"></p>
       <p id="status" role="status"></p>
-      <p>
-        <a href="#" id="openOptions" data-i18n="openOptions">Open Options</a>
-      </p>
+      <section id="localeSelector">
+        <label for="language" data-i18n="languageLabel">Language:</label>
+        <select id="language">
+          <option value="ro" data-i18n="language_ro">Romanian</option>
+          <option value="en" data-i18n="language_en">English</option>
+        </select>
+      </section>
       <section id="logsContainer">
         <details id="logsSection">
           <summary>Fill History (click entries to view details)</summary>
