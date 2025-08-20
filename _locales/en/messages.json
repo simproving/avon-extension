@@ -1,6 +1,6 @@
 {
-  "appName": { "message": "Avon Extension" },
-  "appDesc": { "message": "Starter Chrome Extension (MV3) scaffold." },
+  "appName": { "message": "Avon Auto Order Filler" },
+  "appDesc": { "message": "Automatically fill the Avon Product Entry page" },
   "appActionTitle": { "message": "Avon" },
 
   "popupTitle": { "message": "Avon" },

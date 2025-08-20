@@ -1,6 +1,6 @@
 {
   "appName": { "message": "Extensie Avon" },
-  "appDesc": { "message": "Schelet inițial de extensie Chrome (MV3)." },
+  "appDesc": { "message": "Automează completarea paginii Avon Product Entry" },
   "appActionTitle": { "message": "Avon" },
 
   "popupTitle": { "message": "Avon" },
