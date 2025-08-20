@@ -78,14 +78,6 @@
   "language_ro": { "message": "Română" },
   "language_en": { "message": "Engleză" },
 
-  "aliasesHeading": { "message": "Aliasuri" },
-  "aliasesHelp": { "message": "Leagă cuvinte/expresii de coduri din 5 cifre. La parsare, „10 pungi” va adăuga acel cod cu cantitatea 10." },
-  "aliasPhrase": { "message": "Expresie" },
-  "aliasCode": { "message": "Cod" },
-  "aliasActions": { "message": "Acțiuni" },
-  "addAlias": { "message": "Adaugă alias" },
-  "remove": { "message": "Șterge" },
-
   "csNoItems": { "message": "Niciun element." },
   "csNoProductEntry": { "message": "Formularul Product Entry nu a fost detectat pe această pagină." }
 }

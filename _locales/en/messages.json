@@ -79,13 +79,7 @@
   "language_ro": { "message": "Romanian" },
   "language_en": { "message": "English" },
 
-  "aliasesHeading": { "message": "Aliases" },
-  "aliasesHelp": { "message": "Map words/phrases to 5-digit codes. During parsing, \"10 pungi\" adds that code with quantity 10." },
-  "aliasPhrase": { "message": "Phrase" },
-  "aliasCode": { "message": "Code" },
-  "aliasActions": { "message": "Actions" },
-  "addAlias": { "message": "Add alias" },
-  "remove": { "message": "Remove" },
+
 
   "csNoItems": { "message": "No items." },
   "csNoProductEntry": { "message": "Product Entry form not detected on this page." }

@@ -2,7 +2,6 @@ const statusEl = document.getElementById('status');
 const countsEl = document.getElementById('counts');
 const openOptions = document.getElementById('openOptions');
 const btnProductEntry = document.getElementById('btnProductEntry');
-let aliasList = [];
 
 // Login Manager controls
 const loginNameEl = document.getElementById('loginName');
@@ -251,6 +250,54 @@ async function getActiveTab() {
 }
 
 function extractItems(text) {
+  /*
+  Extracts 5-digit codes and quantities from text.
+  - Supports multiple formats:
+    - "28605 2"
+    - "28605. 2"
+    - "2 28605"
+    - "28605 x 2"
+    - "28605-2"
+    - "06858x2 11247, 28332 10272"
+    - Pag15-14340
+    - Pag 32-49361
+    - Pag 178-18713
+    - Pag 184-25510
+    - 184-25510
+    - 184-25510 2
+    - 184 25510 2 buc
+    - 184 25510 2
+    - Pag  5 cod  34637
+    - Pag  11 cod  09456,02287,11734,10975,07633,05538
+    - Pag 15 cod 30742x2
+    - Cod 63685x2
+    - Pag 19 cod 47993,21824
+    - 47993x2
+    - Pag 48 cod 17715
+    - Pag 136 cod  07278,47696x2,07997
+    - Pag 159 cod 58305
+    - Pag 187 cod 37143,11593
+    - Pag 192 cod 59451
+    - 10 pungi
+
+    - 03418 individual blue 31.99
+    - 59915 set Black Suede 79 leu 2 bucăți
+    - 01099 rol on far away 11.99
+    - 23408 Percive 45 lei
+    - My avon magazine
+    - 98863 shampon volum
+    - 50005 set planet spa 33.99
+    - 05330 spray rare Pearl 2 bucăți
+    - 01032 ser+crema cu castravete 109.99
+
+    - Comanda C5: 17061, 37234, 40188, 28894, 08656, 00158, 09308, 18424, 00299, 06866, 04192-2 buc. 08656, 00158, 59493, 28605-2buc. și 06403(fond de ten) 
+
+    - 37408
+    - 58453.    3 seturi
+    - 20677 2
+    - 00703
+    - 00703 - 2
+  */
   if (!text || typeof text !== 'string') return [];
 
   let s = text
@@ -281,27 +328,7 @@ function extractItems(text) {
     addRange(idxStart, idxEnd);
   };
 
-  // Aliases: map phrases like "pungi" to a 5-digit code, with adjacent numeric quantity
-  if (Array.isArray(aliasList) && aliasList.length) {
-    for (const { phrase, code } of aliasList) {
-      if (!phrase || !/^\d{5}$/.test(code)) continue;
-      const p = escapeRegexLiteral(phrase.trim());
-      let reAlias = new RegExp(`\\b(\\d{1,2})\\s*${p}\\b`, 'gi');
-      for (let m; (m = reAlias.exec(s)); ) {
-        const [full, qty] = m;
-        if (!overlaps(m.index, m.index + full.length)) {
-          addQty(code, qty, m.index, m.index + full.length);
-        }
-      }
-      reAlias = new RegExp(`\\b${p}\\s*(\\d{1,2})\\b`, 'gi');
-      for (let m; (m = reAlias.exec(s)); ) {
-        const [full, qty] = m;
-        if (!overlaps(m.index, m.index + full.length)) {
-          addQty(code, qty, m.index, m.index + full.length);
-        }
-      }
-    }
-  }
+
 
   // Quantity markers like "2 buc", "2 bucăți", "2 bucati", and also "2 set", "2 seturi" near a code.
   // Guard against crossing another 5-digit code between the code and the quantity.
@@ -619,12 +646,8 @@ inputArea?.addEventListener('input', saveLastInputDebounced);
 
   (async () => {
     try {
-      // Load aliases (sync) and last input (local)
-      const [{ aliases = [] } = {}, { lastInput = '' } = {}] = await Promise.all([
-        chrome.storage?.sync?.get?.(['aliases']) || {},
-        chrome.storage?.local?.get?.(['lastInput']) || {}
-      ]);
-      aliasList = Array.isArray(aliases) ? aliases : [];
+      // Load last input (local)
+      const { lastInput = '' } = await chrome.storage?.local?.get?.(['lastInput']) || {};
       if (lastInput && inputArea) {
         inputArea.value = lastInput;
         handleProcess();
@@ -634,12 +657,9 @@ inputArea?.addEventListener('input', saveLastInputDebounced);
     } catch {}
   })();
 
-  // React to alias updates from Options without reopening the popup
+  // React to storage changes
   try {
     chrome.storage?.onChanged?.addListener((changes, areaName) => {
-      if (areaName === 'sync' && changes?.aliases) {
-        aliasList = Array.isArray(changes.aliases.newValue) ? changes.aliases.newValue : [];
-      }
       // Refresh logs when fill history changes
       if (areaName === 'local' && changes?.fillHistory) {
         renderLogs();
