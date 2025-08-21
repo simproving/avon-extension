@@ -581,8 +581,18 @@ btnLoadExample?.addEventListener('click', async () => {
 btnProductEntry.addEventListener('click', async () => {
   const url = 'https://www2.avoncosmetics.ro/ro-home/orders/product-entry';
   try {
-    await chrome.tabs.create({ url });
-    setStatus(t('statusOpenedProductEntry'));
+    // Get the target tab ID from the URL parameter
+    const targetTabId = getTargetTabIdFromUrl();
+    
+    if (targetTabId) {
+      // Update the tab that opened this popup
+      await chrome.tabs.update(targetTabId, { url });
+      setStatus(t('statusOpenedProductEntry'));
+    } else {
+      // Fallback: create a new tab if we don't have the target tab ID
+      await chrome.tabs.create({ url });
+      setStatus(t('statusOpenedProductEntry'));
+    }
   } catch (err) {
     setStatus(t('statusUnableToOpenProductEntry'));
   }

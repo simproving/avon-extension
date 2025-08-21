@@ -8,7 +8,15 @@
   </head>
   <body>
     <main>
-      <h1 data-i18n="popupTitle">Avon</h1>
+      <div class="header-row">
+        <h1 data-i18n="popupTitle">Avon</h1>
+        <div class="language-selector">
+          <select id="language" title="Select language">
+            <option value="ro">RO</option>
+            <option value="en">EN</option>
+          </select>
+        </div>
+      </div>
       <section id="loginManager">
         <div class="login-row">
           <label for="loginName" data-i18n="loginNameLabel">Name</label>
@@ -29,7 +37,6 @@
           <button id="btnSaveLogin" data-i18n="btnSaveLogin">Save</button>
           <select id="loginSelect" data-i18n-title="loginSelectTitle" title=""></select>
           <button id="btnSendLogin" data-i18n="btnSendLogin">Send to Site</button>
-          <button id="btnDeleteLogin" data-i18n="btnDeleteLogin" data-i18n-title="btnDeleteLoginTitle" title="">Delete</button>
         </div>
       </section>
       <button id="btnProductEntry" data-i18n="btnProductEntry">Open Product Entry</button>
@@ -56,13 +63,7 @@
       </section>
       <p id="counts"></p>
       <p id="status" role="status"></p>
-      <section id="localeSelector">
-        <label for="language" data-i18n="languageLabel">Language:</label>
-        <select id="language">
-          <option value="ro" data-i18n="language_ro">Romanian</option>
-          <option value="en" data-i18n="language_en">English</option>
-        </select>
-      </section>
+
       <section id="logsContainer">
         <details id="logsSection">
           <summary>Fill History (click entries to view details)</summary>
