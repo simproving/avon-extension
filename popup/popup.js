@@ -11,7 +11,6 @@ const loginPasswordEl = document.getElementById('loginPassword');
 const btnSaveLoginEl = document.getElementById('btnSaveLogin');
 const loginSelectEl = document.getElementById('loginSelect');
 const btnSendLoginEl = document.getElementById('btnSendLogin');
-const btnDeleteLoginEl = document.getElementById('btnDeleteLogin');
 const btnTogglePasswordEl = document.getElementById('btnTogglePassword');
 
 function readSavedLogins() {
@@ -127,21 +126,7 @@ loginSelectEl?.addEventListener('change', () => {
   }
 });
 
-btnDeleteLoginEl?.addEventListener('click', () => {
-  const logins = readSavedLogins();
-  const idx = Number(loginSelectEl?.value);
-  if (!Number.isInteger(idx) || idx < 0 || idx >= logins.length) {
-    setStatus(t('loginNoneSelected') || 'No saved login selected.');
-    return;
-  }
-  logins.splice(idx, 1);
-  writeSavedLogins(logins);
-  // Adjust selected index
-  const newIdx = Math.min(idx, Math.max(0, logins.length - 1));
-  writeSelectedLoginIndex(logins.length ? newIdx : -1);
-  renderLoginSelect();
-  setStatus(t('loginDeleted') || 'Login deleted.');
-});
+
 
 btnSendLoginEl?.addEventListener('click', async () => {
   const creds = getSelectedOrTypedLogin();

@@ -26,7 +26,7 @@
 
   "loginNameLabel": { "message": "Nume" },
   "loginNamePlaceholder": { "message": "ex. Personal, Serviciu" },
-  "loginUsernameLabel": { "message": "Utilizator" },
+  "loginUsernameLabel": { "message": "Nr. rep" },
   "loginPasswordLabel": { "message": "Parolă" },
   "btnSaveLogin": { "message": "Salvează" },
   "loginSelectTitle": { "message": "Autentificări salvate" },
