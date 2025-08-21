@@ -39,6 +39,7 @@
           <button id="btnSendLogin" data-i18n="btnSendLogin">Send to Site</button>
         </div>
       </section>
+
       <button id="btnProductEntry" data-i18n="btnProductEntry">Open Product Entry</button>
       <section class="formatter">
         <label for="inputArea" data-i18n="labelInput">Input</label>
@@ -49,8 +50,14 @@
           <button id="btnCopy" data-i18n-title="btnCopyTitle" data-i18n="btnCopy">Copy</button>
           <button id="btnFill" data-i18n-title="btnFillTitle" data-i18n="btnFill">Fill On Page</button>
           <button id="btnContinue" data-i18n="btnContinue" title="" style="display:none">Continue</button>
-          <button id="btnLoadExample" data-i18n-title="btnLoadExampleTitle" data-i18n="btnLoadExample">Load Example</button>
         </div>
+        
+        <div class="status-section">
+          <hr class="status-separator">
+          <p id="counts"></p>
+          <p id="status" role="status"></p>
+        </div>
+        
         <label data-i18n="labelOutput">Output</label>
         <div id="outputTableWrapper">
           <table id="outputTable" data-i18n-aria-label="tableAria" aria-label="">
@@ -61,8 +68,7 @@
           </table>
         </div>
       </section>
-      <p id="counts"></p>
-      <p id="status" role="status"></p>
+      <button id="btnLoadExample" data-i18n-title="btnLoadExampleTitle" data-i18n="btnLoadExample">Load Example</button>
 
       <section id="logsContainer">
         <details id="logsSection">
