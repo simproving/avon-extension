@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screenshot Resizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .preview-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .size-label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            max-width: 100%;
+        }
+        button {
+            background: #4A90E2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #357ABD;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        .instructions {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Screenshot Resizer</h1>
+        
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li><strong>Important:</strong> Use the file input below to select your screenshot.png file (don't rely on auto-loading)</li>
+                <li>Preview the resized versions</li>
+                <li>Download the resized images in JPEG or PNG format</li>
+                <li>Files will be 1280x800 and 640x400 pixels, 24-bit (no alpha channel)</li>
+            </ol>
+            <p><strong>Note:</strong> If you get a CORS error, make sure to use the file input button to select your image rather than relying on direct file loading.</p>
+        </div>
+        
+        <input type="file" id="fileInput" accept="image/*">
+        
+        <div class="preview-section">
+            <div class="size-label">Original Image</div>
+            <canvas id="originalCanvas"></canvas>
+        </div>
+        
+        <div class="preview-section">
+            <div class="size-label">1280x800 pixels</div>
+            <canvas id="canvas1280" width="1280" height="800"></canvas>
+            <br>
+            <button onclick="downloadImage('canvas1280', 'screenshot_1280x800.jpg', 'image/jpeg')">Download JPEG</button>
+            <button onclick="downloadImage('canvas1280', 'screenshot_1280x800.png', 'image/png')">Download PNG</button>
+        </div>
+        
+        <div class="preview-section">
+            <div class="size-label">640x400 pixels</div>
+            <canvas id="canvas640" width="640" height="400"></canvas>
+            <br>
+            <button onclick="downloadImage('canvas640', 'screenshot_640x400.jpg', 'image/jpeg')">Download JPEG</button>
+            <button onclick="downloadImage('canvas640', 'screenshot_640x400.png', 'image/png')">Download PNG</button>
+        </div>
+    </div>
+
+    <script>
+        let originalImage = null;
+        
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        originalImage = img;
+                        displayOriginal();
+                        resizeImages();
+                    };
+                    img.crossOrigin = 'anonymous'; // Try to avoid CORS issues
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        function displayOriginal() {
+            const canvas = document.getElementById('originalCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size to fit the image (max 400px width for preview)
+            const maxWidth = 400;
+            const ratio = Math.min(maxWidth / originalImage.width, maxWidth / originalImage.height);
+            canvas.width = originalImage.width * ratio;
+            canvas.height = originalImage.height * ratio;
+            
+            ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+        }
+        
+        function resizeImages() {
+            if (!originalImage) return;
+            
+            // Resize to 1280x800
+            const canvas1280 = document.getElementById('canvas1280');
+            const ctx1280 = canvas1280.getContext('2d');
+            
+            // Create white background (remove alpha channel)
+            ctx1280.fillStyle = '#FFFFFF';
+            ctx1280.fillRect(0, 0, 1280, 800);
+            
+            // Draw image centered and scaled to fit
+            const scale = Math.min(1280 / originalImage.width, 800 / originalImage.height);
+            const scaledWidth = originalImage.width * scale;
+            const scaledHeight = originalImage.height * scale;
+            const x = (1280 - scaledWidth) / 2;
+            const y = (800 - scaledHeight) / 2;
+            
+            ctx1280.drawImage(originalImage, x, y, scaledWidth, scaledHeight);
+            
+            // Resize to 640x400
+            const canvas640 = document.getElementById('canvas640');
+            const ctx640 = canvas640.getContext('2d');
+            
+            // Create white background (remove alpha channel)
+            ctx640.fillStyle = '#FFFFFF';
+            ctx640.fillRect(0, 0, 640, 400);
+            
+            // Draw image centered and scaled to fit
+            const scale640 = Math.min(640 / originalImage.width, 400 / originalImage.height);
+            const scaledWidth640 = originalImage.width * scale640;
+            const scaledHeight640 = originalImage.height * scale640;
+            const x640 = (640 - scaledWidth640) / 2;
+            const y640 = (400 - scaledHeight640) / 2;
+            
+            ctx640.drawImage(originalImage, x640, y640, scaledWidth640, scaledHeight640);
+        }
+        
+        function downloadImage(canvasId, filename, format) {
+            const canvas = document.getElementById(canvasId);
+            
+            try {
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = canvas.toDataURL(format, 0.95);
+                link.click();
+            } catch (error) {
+                console.error('Canvas export failed:', error);
+                alert('Canvas export failed due to CORS restrictions. Please use the file input to select your image instead of loading it directly from the file system.');
+            }
+        }
+        
+        // Auto-load screenshot.png if it exists
+        window.onload = function() {
+            // Try to load screenshot.png automatically
+            const img = new Image();
+            img.onload = function() {
+                originalImage = img;
+                displayOriginal();
+                resizeImages();
+            };
+            img.onerror = function() {
+                console.log('screenshot.png not found, waiting for file input...');
+            };
+            img.crossOrigin = 'anonymous'; // Try to avoid CORS issues
+            img.src = 'screenshot.png';
+        };
+    </script>
+</body>
+</html>
