@@ -12,6 +12,12 @@ A sophisticated Chrome extension that automates the process of filling Avon Prod
 - **Comprehensive Testing**: Extensive test coverage for order parsing logic
 - **Modern Architecture**: Built with Manifest V3 and ES modules
 
+## Screenshots
+
+![Extension Popup Interface](screenshots/popup-interface.png)
+
+*The main popup interface showing order input, processing, and form filling capabilities*
+
 ## Installation
 
 ### Load Unpacked (Development)
