@@ -14,7 +14,7 @@ A sophisticated Chrome extension that automates the process of filling Avon Prod
 
 ## Screenshots
 
-![Extension Popup Interface](screenshots/popup-interface.png)
+![Extension Popup Interface](screenshots/screenshot_1280x800.png)
 
 *The main popup interface showing order input, processing, and form filling capabilities*
 
