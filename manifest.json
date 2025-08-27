@@ -4,8 +4,18 @@
   "name": "__MSG_appName__",
   "version": "0.1.0",
   "description": "__MSG_appDesc__",
+  "icons": {
+    "16": "chrome-icon-16x16-A.png",
+    "48": "chrome-icon-48x48-A.png",
+    "128": "chrome-icon-128x128-A.png"
+  },
   "action": {
-    "default_title": "__MSG_appActionTitle__"
+    "default_title": "__MSG_appActionTitle__",
+    "default_icon": {
+      "16": "chrome-icon-16x16-A.png",
+      "48": "chrome-icon-48x48-A.png",
+      "128": "chrome-icon-128x128-A.png"
+    }
   },
   "background": {
     "service_worker": "background.js",
