@@ -190,6 +190,8 @@ const btnClear = document.getElementById('btnClear');
 const btnCopy = document.getElementById('btnCopy');
 const btnFill = document.getElementById('btnFill');
 const btnContinue = document.getElementById('btnContinue');
+const btnVerify = document.getElementById('btnVerify');
+const btnClearHighlights = document.getElementById('btnClearHighlights');
 const btnLoadExample = document.getElementById('btnLoadExample');
 
 function setStatus(text) {
@@ -397,6 +399,11 @@ function handleProcess() {
   currentItems = extractItems(input);
   renderTable(currentItems, null);
   setStatus(currentItems.length ? t('statusFormatted') : t('statusNoCodes'));
+  
+  // Show verify button if we have items
+  if (currentItems.length > 0) {
+    btnVerify.style.display = 'inline-block';
+  }
 
   // Sanity: count 5-digit codes in input (total and unique) vs output rows
   try {
@@ -433,7 +440,10 @@ btnProcess?.addEventListener('click', handleProcess);
 btnClear?.addEventListener('click', () => {
   inputArea.value = '';
   outputArea.value = '';
+  currentItems = [];
+  renderTable([], null);
   setStatus(t('statusCleared'));
+  btnVerify.style.display = 'none';
   try { chrome.storage?.local?.remove?.('lastInput'); } catch {}
 });
 btnCopy?.addEventListener('click', async () => {
@@ -510,6 +520,54 @@ btnFill?.addEventListener('click', async () => {
       : (response?.error || t('statusFillFailed')));
     if (response?.ok) {
       btnContinue.style.display = 'none';
+      btnVerify.style.display = 'inline-block';
+    }
+  } catch (err) {
+    setStatus(t('statusUnableToCommunicate'));
+  }
+});
+
+// Verify codes on the current page
+btnVerify?.addEventListener('click', async () => {
+  const tab = await getActiveTab();
+  try {
+    setStatus(t('statusVerifying') || 'Verifying codes...');
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'AVON_VERIFY_CODES' });
+    if (response?.ok && response.verification) {
+      const { correctCodes, incorrectCodes, missingCodes, accuracy } = response.verification;
+      
+      if (accuracy === 100 && incorrectCodes === 0 && missingCodes === 0) {
+        setStatus(t('statusVerificationPerfect'));
+        // Hide clear highlights button if no issues
+        btnClearHighlights.style.display = 'none';
+      } else if (incorrectCodes > 0 || missingCodes > 0) {
+        setStatus(t('statusVerificationIssues', [String(correctCodes), String(incorrectCodes), String(missingCodes), String(accuracy)]));
+        // Show clear highlights button if there are issues
+        btnClearHighlights.style.display = 'inline-block';
+      } else {
+        setStatus(t('statusVerificationComplete', [String(correctCodes), String(incorrectCodes), String(missingCodes), String(accuracy)]));
+        // Hide clear highlights button if no issues
+        btnClearHighlights.style.display = 'none';
+      }
+    } else {
+      setStatus(response?.error || t('statusVerificationFailed') || 'Verification failed');
+    }
+  } catch (err) {
+    setStatus(t('statusUnableToCommunicate'));
+  }
+});
+
+// Clear verification highlights from the page
+btnClearHighlights?.addEventListener('click', async () => {
+  const tab = await getActiveTab();
+  try {
+    setStatus(t('statusClearingHighlights') || 'Clearing highlights...');
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'AVON_CLEAR_HIGHLIGHTS' });
+    if (response?.ok) {
+      setStatus(t('statusHighlightsCleared') || 'Highlights cleared.');
+      btnClearHighlights.style.display = 'none';
+    } else {
+      setStatus(response?.error || t('statusUnableToClearHighlights') || 'Unable to clear highlights.');
     }
   } catch (err) {
     setStatus(t('statusUnableToCommunicate'));
@@ -529,8 +587,32 @@ chrome.runtime.onMessage.addListener((message) => {
   }
   if (message.type === 'AVON_FILL_DONE') {
     renderTable(currentItems, null);
-    setStatus(t('statusFillComplete'));
+    
+    // Display verification information if available
+    if (message.verification && !message.verification.error) {
+      const { correctCodes, incorrectCodes, missingCodes, accuracy } = message.verification;
+      
+      if (accuracy === 100 && incorrectCodes === 0 && missingCodes === 0) {
+        setStatus(t('statusVerificationPerfect'));
+        // Hide clear highlights button if no issues
+        btnClearHighlights.style.display = 'none';
+      } else if (incorrectCodes > 0 || missingCodes > 0) {
+        setStatus(t('statusVerificationIssues', [String(correctCodes), String(incorrectCodes), String(missingCodes), String(accuracy)]));
+        // Show clear highlights button if there are issues
+        btnClearHighlights.style.display = 'inline-block';
+      } else {
+        setStatus(t('statusVerificationComplete', [String(correctCodes), String(incorrectCodes), String(missingCodes), String(accuracy)]));
+        // Hide clear highlights button if no issues
+        btnClearHighlights.style.display = 'none';
+      }
+    } else if (message.verification && message.verification.error) {
+      setStatus(t('statusVerificationFailed', [message.verification.error]));
+    } else {
+      setStatus(t('statusFillComplete'));
+    }
+    
     btnContinue.style.display = 'none';
+    btnVerify.style.display = 'inline-block';
     // Refresh logs to show the new entry
     renderLogs();
   }
@@ -541,6 +623,7 @@ chrome.runtime.onMessage.addListener((message) => {
     setStatus(t('statusPausedAfter', [String(Math.min(nextIndex, batchSize)), String(remaining)])
       || `Paused after ${Math.min(nextIndex, batchSize)} items. ${remaining} remaining.`);
     btnContinue.style.display = 'inline-block';
+    btnVerify.style.display = 'inline-block';
   }
 });
 
