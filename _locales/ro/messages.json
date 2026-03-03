@@ -51,6 +51,8 @@
   "loginExportEmpty": { "message": "Nicio autentificare de exportat." },
   "loginExported": { "message": "Autentificări exportate." },
   "loginImported": { "message": "S-au importat $1 autentificări." },
+  "loginImportedSkipped": { "message": "S-au importat $1 autentificări, $2 duplicate sărite." },
+  "loginImportAllDuplicates": { "message": "Toate autentificările importate sunt duplicate." },
   "loginImportInvalid": { "message": "Format invalid: se așteaptă array." },
   "loginImportNoValid": { "message": "Nu s-au găsit autentificări valide în fișier." },
   "loginImportError": { "message": "Eșec la importarea autentificărilor." },

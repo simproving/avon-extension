@@ -53,6 +53,8 @@
   "loginExportEmpty": { "message": "No logins to export." },
   "loginExported": { "message": "Logins exported." },
   "loginImported": { "message": "Imported $1 login(s)." },
+  "loginImportedSkipped": { "message": "Imported $1 login(s), skipped $2 duplicate(s)." },
+  "loginImportAllDuplicates": { "message": "All imported logins are duplicates." },
   "loginImportInvalid": { "message": "Invalid format: expected array." },
   "loginImportNoValid": { "message": "No valid logins found in file." },
   "loginImportError": { "message": "Failed to import logins." },

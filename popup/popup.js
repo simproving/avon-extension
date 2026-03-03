@@ -167,10 +167,27 @@ fileImportLoginsEl?.addEventListener('change', async (e) => {
       return;
     }
     const current = readSavedLogins();
-    const merged = [...current, ...valid];
+    const existingUsernames = new Set(current.map(l => l?.username?.toLowerCase()).filter(Boolean));
+    const newLogins = [];
+    const skipped = [];
+    for (const login of valid) {
+      const usernameLower = (login.username || '').toLowerCase();
+      if (existingUsernames.has(usernameLower)) {
+        skipped.push(login.username);
+      } else {
+        newLogins.push(login);
+        existingUsernames.add(usernameLower);
+      }
+    }
+    const merged = [...current, ...newLogins];
     writeSavedLogins(merged);
     renderLoginSelect();
-    setStatus(t('loginImported', [String(valid.length)]) || `Imported ${valid.length} login(s).`);
+    const msg = newLogins.length
+      ? (skipped.length
+          ? t('loginImportedSkipped', [String(newLogins.length), String(skipped.length)]) || `Imported ${newLogins.length} login(s), skipped ${skipped.length} duplicate(s).`
+          : t('loginImported', [String(newLogins.length)]) || `Imported ${newLogins.length} login(s).`)
+      : (t('loginImportAllDuplicates') || 'All imported logins are duplicates.');
+    setStatus(msg);
   } catch {
     setStatus(t('loginImportError') || 'Failed to import logins.');
   }
