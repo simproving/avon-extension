@@ -354,7 +354,7 @@
         qtyInput.dispatchEvent(new Event('input', { bubbles: true }));
         qtyInput.dispatchEvent(new Event('change', { bubbles: true }));
         qtyInput.blur();
-      }, 333);
+      }, 777);
     }
 
     // Always return continue to process next code with delay
@@ -388,12 +388,12 @@
         return;
       }
       // Wait 500ms before next iteration if no empty input found
-      setTimeout(tick, 500);
+      setTimeout(tick, 900);
     };
     
     // initial burst
     stepFill();
-    setTimeout(tick, 500);
+    setTimeout(tick, 900);
   };
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

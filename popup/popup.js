@@ -126,6 +126,57 @@ loginSelectEl?.addEventListener('change', () => {
   }
 });
 
+const btnExportLoginsEl = document.getElementById('btnExportLogins');
+const btnImportLoginsEl = document.getElementById('btnImportLogins');
+const fileImportLoginsEl = document.getElementById('fileImportLogins');
+
+btnExportLoginsEl?.addEventListener('click', () => {
+  const logins = readSavedLogins();
+  if (!logins.length) {
+    setStatus(t('loginExportEmpty') || 'No logins to export.');
+    return;
+  }
+  const dataStr = JSON.stringify(logins, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'avon_logins.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  setStatus(t('loginExported') || 'Logins exported.');
+});
+
+btnImportLoginsEl?.addEventListener('click', () => {
+  fileImportLoginsEl.click();
+});
+
+fileImportLoginsEl?.addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const imported = JSON.parse(text);
+    if (!Array.isArray(imported)) {
+      setStatus(t('loginImportInvalid') || 'Invalid format: expected array.');
+      return;
+    }
+    const valid = imported.filter(l => l && typeof l === 'object' && typeof l.username === 'string');
+    if (!valid.length) {
+      setStatus(t('loginImportNoValid') || 'No valid logins found in file.');
+      return;
+    }
+    const current = readSavedLogins();
+    const merged = [...current, ...valid];
+    writeSavedLogins(merged);
+    renderLoginSelect();
+    setStatus(t('loginImported', [String(valid.length)]) || `Imported ${valid.length} login(s).`);
+  } catch {
+    setStatus(t('loginImportError') || 'Failed to import logins.');
+  }
+  fileImportLoginsEl.value = '';
+});
+
 
 
 btnSendLoginEl?.addEventListener('click', async () => {

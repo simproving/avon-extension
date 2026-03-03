@@ -90,6 +90,14 @@ h1 {
   flex-wrap: wrap;
 }
 
+#loginManager .login-import-export {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
 #loginManager .password-wrap {
   display: grid;
   grid-template-columns: 1fr auto;
