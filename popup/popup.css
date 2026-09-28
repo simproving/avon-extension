@@ -105,7 +105,18 @@ h1 {
   gap: 6px;
 }
 
+#loginManager .field-with-copy {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px;
+}
+
 #btnTogglePassword {
+  padding: 4px 8px;
+}
+
+.btn-copy-field {
   padding: 4px 8px;
 }
 

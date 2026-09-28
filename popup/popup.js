@@ -6,13 +6,17 @@ const btnProductEntry = document.getElementById('btnProductEntry');
 
 // Login Manager controls
 const loginNameEl = document.getElementById('loginName');
+const loginSurnameEl = document.getElementById('loginSurname');
 const loginUsernameEl = document.getElementById('loginUsername');
 const loginEmailEl = document.getElementById('loginEmail');
+const loginEmailCodeEl = document.getElementById('loginEmailCode');
 const loginPasswordEl = document.getElementById('loginPassword');
 const btnSaveLoginEl = document.getElementById('btnSaveLogin');
 const loginSelectEl = document.getElementById('loginSelect');
 const btnSendLoginEl = document.getElementById('btnSendLogin');
 const btnTogglePasswordEl = document.getElementById('btnTogglePassword');
+const btnCopyEmailEl = document.getElementById('btnCopyEmail');
+const btnCopyEmailCodeEl = document.getElementById('btnCopyEmailCode');
 
 function readSavedLogins() {
   try {
@@ -57,12 +61,14 @@ function renderLoginSelect() {
     const opt = document.createElement('option');
     opt.value = String(i);
     const name = (login?.name || '').trim();
+    const surname = (login?.surname || '').trim();
     const user = (login?.username || '').trim();
     const email = (login?.email || '').trim();
     const detail = user || email;
-    const label = name && detail
-      ? `${name} (${detail})`
-      : (name || detail || (t('loginDefaultLabel', [String(i + 1)]) || `Login ${i + 1}`));
+    const fullName = surname ? `${name} ${surname}`.trim() : name;
+    const label = fullName && detail
+      ? `${fullName} (${detail})`
+      : (fullName || detail || (t('loginDefaultLabel', [String(i + 1)]) || `Login ${i + 1}`));
     opt.textContent = label;
     opt.title = label;
     loginSelectEl.appendChild(opt);
@@ -78,6 +84,8 @@ function getSelectedOrTypedLogin() {
   const typedEmail = loginEmailEl?.value?.trim() || '';
   const typedPassword = loginPasswordEl?.value || '';
   const typedName = loginNameEl?.value?.trim() || '';
+  const typedSurname = loginSurnameEl?.value?.trim() || '';
+  const typedEmailCode = loginEmailCodeEl?.value?.trim() || '';
   const logins = readSavedLogins();
   const selectIdx = loginSelectEl && loginSelectEl.disabled === false ? Number(loginSelectEl.value) : NaN;
   if (Number.isInteger(selectIdx) && selectIdx >= 0 && selectIdx < logins.length) {
@@ -85,15 +93,17 @@ function getSelectedOrTypedLogin() {
     return logins[selectIdx];
   }
   if (typedUsername || typedEmail || typedPassword) {
-    return { name: typedName, username: typedUsername, email: typedEmail, password: typedPassword };
+    return { name: typedName, surname: typedSurname, username: typedUsername, email: typedEmail, emailCode: typedEmailCode, password: typedPassword };
   }
   return null;
 }
 
 btnSaveLoginEl?.addEventListener('click', () => {
   const name = loginNameEl?.value?.trim() || '';
+  const surname = loginSurnameEl?.value?.trim() || '';
   const username = loginUsernameEl?.value?.trim() || '';
   const email = loginEmailEl?.value?.trim() || '';
+  const emailCode = loginEmailCodeEl?.value?.trim() || '';
   const password = loginPasswordEl?.value || '';
   if (!username) {
     setStatus(t('loginPleaseEnterUsername') || 'Please enter a username to save.');
@@ -107,10 +117,10 @@ btnSaveLoginEl?.addEventListener('click', () => {
     existingIndex = current.findIndex(l => l && (l.name || '').trim() === labeledName);
   }
   if (existingIndex >= 0) {
-    current[existingIndex] = { name: labeledName, username, email, password };
+    current[existingIndex] = { name: labeledName, surname, username, email, emailCode, password };
     writeSelectedLoginIndex(existingIndex);
   } else {
-    current.push({ name: labeledName, username, email, password });
+    current.push({ name: labeledName, surname, username, email, emailCode, password });
     writeSelectedLoginIndex(current.length - 1);
   }
   writeSavedLogins(current);
@@ -126,8 +136,10 @@ loginSelectEl?.addEventListener('change', () => {
   const selected = logins[idx];
   if (selected) {
     if (loginNameEl) loginNameEl.value = selected.name || '';
+    if (loginSurnameEl) loginSurnameEl.value = selected.surname || '';
     if (loginUsernameEl) loginUsernameEl.value = selected.username || '';
     if (loginEmailEl) loginEmailEl.value = selected.email || '';
+    if (loginEmailCodeEl) loginEmailCodeEl.value = selected.emailCode || '';
     if (loginPasswordEl) loginPasswordEl.value = selected.password || '';
   }
 });
@@ -142,12 +154,20 @@ btnExportLoginsEl?.addEventListener('click', () => {
     setStatus(t('loginExportEmpty') || 'No logins to export.');
     return;
   }
-  const dataStr = JSON.stringify(logins, null, 2);
-  const blob = new Blob([dataStr], { type: 'application/json' });
+  const csvEscape = (val) => {
+    const s = String(val ?? '');
+    return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const rows = [['name', 'surname', 'username', 'email', 'emailCode', 'password']];
+  for (const l of logins) {
+    rows.push([l.name ?? '', l.surname ?? '', l.username ?? '', l.email ?? '', l.emailCode ?? '', l.password ?? '']);
+  }
+  const csvStr = rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob([csvStr], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'avon_logins.json';
+  a.download = 'avon_logins.csv';
   a.click();
   URL.revokeObjectURL(url);
   setStatus(t('loginExported') || 'Logins exported.');
@@ -162,12 +182,53 @@ fileImportLoginsEl?.addEventListener('change', async (e) => {
   if (!file) return;
   try {
     const text = await file.text();
-    const imported = JSON.parse(text);
-    if (!Array.isArray(imported)) {
-      setStatus(t('loginImportInvalid') || 'Invalid format: expected array.');
+
+    // Parse CSV: split into lines, handle quoted fields
+    const parseCSVLine = (line) => {
+      const fields = [];
+      let cur = '', inQuote = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuote) {
+          if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+          else if (ch === '"') { inQuote = false; }
+          else { cur += ch; }
+        } else {
+          if (ch === '"') { inQuote = true; }
+          else if (ch === ',') { fields.push(cur); cur = ''; }
+          else { cur += ch; }
+        }
+      }
+      fields.push(cur);
+      return fields;
+    };
+
+    const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+    if (lines.length < 2) {
+      setStatus(t('loginImportInvalid') || 'Invalid format: expected CSV with header row.');
       return;
     }
-    const valid = imported.filter(l => l && typeof l === 'object' && typeof l.username === 'string');
+    const header = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+    const colIndex = { name: -1, surname: -1, username: -1, email: -1, emailCode: -1, password: -1 };
+    for (const key of Object.keys(colIndex)) {
+      colIndex[key] = header.indexOf(key);
+    }
+    if (colIndex.username === -1) {
+      setStatus(t('loginImportInvalid') || 'Invalid format: expected CSV with header row.');
+      return;
+    }
+    const imported = lines.slice(1).map(line => {
+      const fields = parseCSVLine(line);
+      return {
+        name:      colIndex.name      >= 0 ? (fields[colIndex.name]      ?? '') : '',
+        surname:   colIndex.surname   >= 0 ? (fields[colIndex.surname]   ?? '') : '',
+        username:  colIndex.username  >= 0 ? (fields[colIndex.username]  ?? '') : '',
+        email:     colIndex.email     >= 0 ? (fields[colIndex.email]     ?? '') : '',
+        emailCode: colIndex.emailCode >= 0 ? (fields[colIndex.emailCode] ?? '') : '',
+        password:  colIndex.password  >= 0 ? (fields[colIndex.password]  ?? '') : '',
+      };
+    });
+    const valid = imported.filter(l => typeof l.username === 'string' && l.username.trim() !== '');
     if (!valid.length) {
       setStatus(t('loginImportNoValid') || 'No valid logins found in file.');
       return;
@@ -213,7 +274,9 @@ btnSendLoginEl?.addEventListener('click', async () => {
     const response = await chrome.tabs.sendMessage(tab.id, {
       type: 'AVON_LOGIN_FILL',
       username: creds.username,
-      password: creds.password || ''
+      password: creds.password || '',
+      surname: creds.surname || '',
+      emailCode: creds.emailCode || ''
     });
     if (response?.ok) {
       setStatus(t('loginSentOk') || 'Credentials sent to page.');
@@ -234,8 +297,10 @@ renderLoginSelect();
   if (idx >= 0 && idx < list.length) {
     const s = list[idx];
     if (loginNameEl) loginNameEl.value = s.name || '';
+    if (loginSurnameEl) loginSurnameEl.value = s.surname || '';
     if (loginUsernameEl) loginUsernameEl.value = s.username || '';
     if (loginEmailEl) loginEmailEl.value = s.email || '';
+    if (loginEmailCodeEl) loginEmailCodeEl.value = s.emailCode || '';
     if (loginPasswordEl) loginPasswordEl.value = s.password || '';
   }
 })();
@@ -250,6 +315,25 @@ btnTogglePasswordEl?.addEventListener('click', () => {
     btnTogglePasswordEl.title = isHidden ? (t('loginToggleHide') || 'Hide password') : (t('loginToggleShow') || 'Show password');
     btnTogglePasswordEl.textContent = isHidden ? '🙈' : '👁';
   }
+});
+
+// Copy email / email code to clipboard
+async function copyFieldValue(value, successKey, fallback) {
+  if (!value) return;
+  try {
+    await navigator.clipboard.writeText(value);
+    setStatus(t(successKey) || fallback);
+  } catch {
+    setStatus(t('statusCopyFailed') || 'Copy failed.');
+  }
+}
+
+btnCopyEmailEl?.addEventListener('click', () => {
+  copyFieldValue(loginEmailEl?.value?.trim(), 'statusEmailCopied', 'Email copied.');
+});
+
+btnCopyEmailCodeEl?.addEventListener('click', () => {
+  copyFieldValue(loginEmailCodeEl?.value?.trim(), 'statusEmailCodeCopied', 'Email code copied.');
 });
 
 function escapeRegexLiteral(text) {

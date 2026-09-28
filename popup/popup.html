@@ -23,12 +23,26 @@
           <input id="loginName" type="text" data-i18n-placeholder="loginNamePlaceholder" placeholder="" />
         </div>
         <div class="login-row">
+          <label for="loginSurname" data-i18n="loginSurnameLabel">Surname</label>
+          <input id="loginSurname" type="text" data-i18n-placeholder="loginSurnamePlaceholder" placeholder="" autocomplete="family-name" />
+        </div>
+        <div class="login-row">
           <label for="loginUsername" data-i18n="loginUsernameLabel">Username</label>
           <input id="loginUsername" type="text" autocomplete="username" />
         </div>
         <div class="login-row">
           <label for="loginEmail" data-i18n="loginEmailLabel">Email</label>
-          <input id="loginEmail" type="email" autocomplete="email" data-i18n-placeholder="loginEmailPlaceholder" placeholder="" />
+          <div class="field-with-copy">
+            <input id="loginEmail" type="email" autocomplete="email" data-i18n-placeholder="loginEmailPlaceholder" placeholder="" />
+            <button id="btnCopyEmail" type="button" class="btn-copy-field" data-i18n-aria-label="btnCopyEmailAria" data-i18n-title="btnCopyEmailAria" aria-label="Copy email" title="Copy email">📋</button>
+          </div>
+        </div>
+        <div class="login-row">
+          <label for="loginEmailCode" data-i18n="loginEmailCodeLabel">Email Code</label>
+          <div class="field-with-copy">
+            <input id="loginEmailCode" type="text" inputmode="numeric" data-i18n-placeholder="loginEmailCodePlaceholder" placeholder="" autocomplete="one-time-code" />
+            <button id="btnCopyEmailCode" type="button" class="btn-copy-field" data-i18n-aria-label="btnCopyEmailCodeAria" data-i18n-title="btnCopyEmailCodeAria" aria-label="Copy email code" title="Copy email code">📋</button>
+          </div>
         </div>
         <div class="login-row">
           <label for="loginPassword" data-i18n="loginPasswordLabel">Password</label>
@@ -45,7 +59,7 @@
         <div class="login-import-export">
           <button id="btnExportLogins" data-i18n="btnExportLogins">Export</button>
           <button id="btnImportLogins" data-i18n="btnImportLogins">Import</button>
-          <input type="file" id="fileImportLogins" accept=".json" style="display:none" />
+          <input type="file" id="fileImportLogins" accept=".csv" style="display:none" />
         </div>
       </section>
 
