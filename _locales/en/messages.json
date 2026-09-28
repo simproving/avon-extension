@@ -31,6 +31,8 @@
   "loginNameLabel": { "message": "Name" },
   "loginNamePlaceholder": { "message": "e.g. Personal, Work" },
   "loginUsernameLabel": { "message": "Username" },
+  "loginEmailLabel": { "message": "Email" },
+  "loginEmailPlaceholder": { "message": "e.g. user@example.com" },
   "loginPasswordLabel": { "message": "Password" },
   "btnSaveLogin": { "message": "Save" },
   "loginSelectTitle": { "message": "Saved logins" },

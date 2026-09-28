@@ -7,6 +7,7 @@ const btnProductEntry = document.getElementById('btnProductEntry');
 // Login Manager controls
 const loginNameEl = document.getElementById('loginName');
 const loginUsernameEl = document.getElementById('loginUsername');
+const loginEmailEl = document.getElementById('loginEmail');
 const loginPasswordEl = document.getElementById('loginPassword');
 const btnSaveLoginEl = document.getElementById('btnSaveLogin');
 const loginSelectEl = document.getElementById('loginSelect');
@@ -57,9 +58,11 @@ function renderLoginSelect() {
     opt.value = String(i);
     const name = (login?.name || '').trim();
     const user = (login?.username || '').trim();
-    const label = name && user
-      ? `${name} (${user})`
-      : (name || user || (t('loginDefaultLabel', [String(i + 1)]) || `Login ${i + 1}`));
+    const email = (login?.email || '').trim();
+    const detail = user || email;
+    const label = name && detail
+      ? `${name} (${detail})`
+      : (name || detail || (t('loginDefaultLabel', [String(i + 1)]) || `Login ${i + 1}`));
     opt.textContent = label;
     opt.title = label;
     loginSelectEl.appendChild(opt);
@@ -72,6 +75,7 @@ function renderLoginSelect() {
 
 function getSelectedOrTypedLogin() {
   const typedUsername = loginUsernameEl?.value?.trim() || '';
+  const typedEmail = loginEmailEl?.value?.trim() || '';
   const typedPassword = loginPasswordEl?.value || '';
   const typedName = loginNameEl?.value?.trim() || '';
   const logins = readSavedLogins();
@@ -80,8 +84,8 @@ function getSelectedOrTypedLogin() {
     writeSelectedLoginIndex(selectIdx);
     return logins[selectIdx];
   }
-  if (typedUsername || typedPassword) {
-    return { name: typedName, username: typedUsername, password: typedPassword };
+  if (typedUsername || typedEmail || typedPassword) {
+    return { name: typedName, username: typedUsername, email: typedEmail, password: typedPassword };
   }
   return null;
 }
@@ -89,6 +93,7 @@ function getSelectedOrTypedLogin() {
 btnSaveLoginEl?.addEventListener('click', () => {
   const name = loginNameEl?.value?.trim() || '';
   const username = loginUsernameEl?.value?.trim() || '';
+  const email = loginEmailEl?.value?.trim() || '';
   const password = loginPasswordEl?.value || '';
   if (!username) {
     setStatus(t('loginPleaseEnterUsername') || 'Please enter a username to save.');
@@ -102,10 +107,10 @@ btnSaveLoginEl?.addEventListener('click', () => {
     existingIndex = current.findIndex(l => l && (l.name || '').trim() === labeledName);
   }
   if (existingIndex >= 0) {
-    current[existingIndex] = { name: labeledName, username, password };
+    current[existingIndex] = { name: labeledName, username, email, password };
     writeSelectedLoginIndex(existingIndex);
   } else {
-    current.push({ name: labeledName, username, password });
+    current.push({ name: labeledName, username, email, password });
     writeSelectedLoginIndex(current.length - 1);
   }
   writeSavedLogins(current);
@@ -122,6 +127,7 @@ loginSelectEl?.addEventListener('change', () => {
   if (selected) {
     if (loginNameEl) loginNameEl.value = selected.name || '';
     if (loginUsernameEl) loginUsernameEl.value = selected.username || '';
+    if (loginEmailEl) loginEmailEl.value = selected.email || '';
     if (loginPasswordEl) loginPasswordEl.value = selected.password || '';
   }
 });
@@ -229,6 +235,7 @@ renderLoginSelect();
     const s = list[idx];
     if (loginNameEl) loginNameEl.value = s.name || '';
     if (loginUsernameEl) loginUsernameEl.value = s.username || '';
+    if (loginEmailEl) loginEmailEl.value = s.email || '';
     if (loginPasswordEl) loginPasswordEl.value = s.password || '';
   }
 })();
