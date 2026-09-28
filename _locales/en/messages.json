@@ -82,6 +82,9 @@
   "countsSummary": { "message": "Codes in input: total $1, unique $2 | output: $3 ($4 unique)" },
   "countsMismatchIndicator": { "message": " ⚠️" },
   
+  "btnGoToEmail": { "message": "Go to Email" },
+  "statusUnableToOpenEmail": { "message": "Unable to open email window." },
+
   "statusOpenedProductEntry": { "message": "Opened Product Entry." },
   "statusUnableToOpenProductEntry": { "message": "Unable to open Product Entry." },
   "alertInjectedFromPopup": { "message": "Injected from Avon popup" },

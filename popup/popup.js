@@ -756,6 +756,19 @@ btnProductEntry.addEventListener('click', async () => {
   }
 });
 
+// Go to Email button — opens Proton Mail in a new incognito window
+const btnGoToEmail = document.getElementById('btnGoToEmail');
+btnGoToEmail?.addEventListener('click', async () => {
+  try {
+    await chrome.windows.create({
+      url: 'https://account.proton.me/mail',
+      incognito: true
+    });
+  } catch (err) {
+    setStatus(t('statusUnableToOpenEmail') || 'Unable to open email window.');
+  }
+});
+
 // Locale selector functionality
 const languageSelect = document.getElementById('language');
 

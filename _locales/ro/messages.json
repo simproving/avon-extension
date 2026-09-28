@@ -80,6 +80,9 @@
   "countsSummary": { "message": "Coduri în intrare: total $1, unic $2 | rezultat: $3 ($4 unice)" },
   "countsMismatchIndicator": { "message": " ⚠️" },
   
+  "btnGoToEmail": { "message": "Mergi la Email" },
+  "statusUnableToOpenEmail": { "message": "Nu se poate deschide fereastra de email." },
+
   "statusOpenedProductEntry": { "message": "S-a deschis Product Entry." },
   "statusUnableToOpenProductEntry": { "message": "Nu se poate deschide Product Entry." },
   "alertInjectedFromPopup": { "message": "Injectat din fereastra Avon" },
